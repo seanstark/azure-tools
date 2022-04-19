@@ -1,8 +1,8 @@
 ﻿<#
     This script will resolve storage account primary and secondary endpoints to ipv4 addresses.
-    The script will inventory all storage accounts across all subscriptions
+    The script will inventory storage accounts across all subscriptions
 
-     You can access to resolved ipv4 addresses via the below properties:
+     You can access the resolved ipv4 addresses via the below properties:
 
      PrimaryBlobDNS									SecondaryBlobDNS
      PrimaryBlobIP4Address							SecondaryBlobIP4Address
