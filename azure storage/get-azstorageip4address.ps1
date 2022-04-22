@@ -26,17 +26,21 @@
         PrimaryInternetEndpointsDNS					SecondaryInternetEndpointsDNS
         PrimaryInternetEndpointsIP4Address  		SecondaryInternetEndpointsIP4Address
 
+        Aggregrated list IPv4 Addresses are stored in:
+        PrimaryIP4Addresses
+        SecondaryIP4Addresses
+
     .EXAMPLE
-        Get all Storage Accounts for a single subscription
+        Get Storage Accounts for a single subscription
         $storageAccountReport = .\get-azstorageip4address.ps1 -Subscription 'production resources'
 
     .EXAMPLE
-        Get all Storage Accounts for multiple subscriptions
+        Get Storage Accounts for multiple subscriptions
         $storageAccountReport = .\get-azstorageip4address.ps1 -Subscription 'production resources','dev resources'
 
     .EXAMPLE
-        Get all Storage Accounts for all subscriptions
-        $storageAccountReport = Get-AzSubscription | .\get-azstorageip4address.ps1 -Subscription 'production resources','dev resources'
+        Get Storage Accounts for all subscriptions
+        $storageAccountReport = .\get-azstorageip4address.ps1 -Subscription (Get-AzSubscription).Id
 
     .EXAMPLE
         Search for an IP Address
@@ -78,13 +82,21 @@ If(!(Get-AzContext)){
 
 $allStorageAccounts = @()
 
+Write-Host ('Starting Inventory on {0} Subscriptions'-f $subscription.count) -ForegroundColor Green
+
 ForEach ($sub in $subscription){
     
     $context = Set-AzContext -Subscription $sub -WarningAction SilentlyContinue
+ 
+    Write-Host ('Starting Inventory on the {0} Subscription'-f $context.Subscription.Name) -ForegroundColor Yellow
 
     $storageAccounts = Get-AzStorageAccount 
 
+    Write-Host ('Found a total of {0} storage accounts in {1}'-f $storageAccounts.Count, $sub) -ForegroundColor Cyan
+
     forEach ($storageAccount in $storageAccounts){
+
+        Write-Host ('Getting information on {0}'-f $storageAccount.StorageAccountName) -ForegroundColor Cyan
 
         $primaryIP4Addresses = @()
         $secondaryIP4Addresses = @()
@@ -129,5 +141,7 @@ ForEach ($sub in $subscription){
 
     $allStorageAccounts += $storageAccounts
 }
+
+Write-Host 'Script Completed' -ForegroundColor Green
 
 $allStorageAccounts
