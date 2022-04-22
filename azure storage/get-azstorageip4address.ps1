@@ -1,7 +1,7 @@
 ﻿<#
     .DESCRIPTION
         This script will resolve storage account primary and secondary endpoints to ipv4 addresses.
-        The script will inventory storage accounts across all subscriptions
+        The script will inventory storage accounts across all subscriptions by default
 
     .PARAMETER Subscription
         The name or id of the subscription that the context should be set to. You can enter one or more strings separated by commas for multiple subscriptions
@@ -29,6 +29,10 @@
         Aggregated list IPv4 Addresses are stored in:
         PrimaryIP4Addresses
         SecondaryIP4Addresses
+    
+    .EXAMPLE
+        Get Storage Accounts for all subscriptions
+        $storageAccountReport = .\get-azstorageip4address.ps1
 
     .EXAMPLE
         Get Storage Accounts for a single subscription
@@ -37,10 +41,6 @@
     .EXAMPLE
         Get Storage Accounts for multiple subscriptions
         $storageAccountReport = .\get-azstorageip4address.ps1 -Subscription 'production resources','dev resources'
-
-    .EXAMPLE
-        Get Storage Accounts for all subscriptions
-        $storageAccountReport = .\get-azstorageip4address.ps1 -Subscription (Get-AzSubscription).Id
 
     .EXAMPLE
         Search for an IP Address
@@ -58,7 +58,7 @@
 #>
 
 param(
-    [Parameter(Mandatory=$true,ValueFromPipeline = $true)]
+    [Parameter(Mandatory=$false,ValueFromPipeline = $true)]
     [Alias('Id')]
     [string[]]$Subscription
 )
@@ -73,11 +73,19 @@ ForEach ($module in $modulesToInstall){
     Install-Module $module -force
 }
 
-Import-Module Az.Accounts, Az.Storage
+#Load Latest Version 
+ForEach ($module in $requiredModules){
+    Remove-Module $module -Force -Confirm:$false -ErrorAction SilentlyContinue
+    (Get-Module -Name $module -ListAvailable | Sort-Object -Property Version)[-1] | Import-Module
+}
 
 If(!(Get-AzContext)){
     Write-Host 'Connecting to Azure Subscription' -ForegroundColor Yellow
     Connect-AzAccount -Subscription $Subscription[0] | Out-Null
+}
+
+If(!($Subscription)){
+    $Subscription = Get-AzSubscription -WarningAction SilentlyContinue
 }
 
 $allStorageAccounts = @()
