@@ -81,7 +81,7 @@ ForEach ($module in $requiredModules){
 
 If(!(Get-AzContext)){
     Write-Host 'Connecting to Azure Subscription' -ForegroundColor Yellow
-    Connect-AzAccount -Subscription $Subscription[0] | Out-Null
+    Connect-AzAccount -Subscription $Subscription[0] -WarningAction SilentlyContinue | Out-Null
 }
 
 If(!($Subscription)){
