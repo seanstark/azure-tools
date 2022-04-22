@@ -92,11 +92,11 @@ ForEach ($sub in $subscription){
 
     $storageAccounts = Get-AzStorageAccount 
 
-    Write-Host ('Found a total of {0} storage accounts in {1}'-f $storageAccounts.Count, $sub) -ForegroundColor Cyan
+    Write-Host ('Found a total of {0} storage accounts in {1}'-f $storageAccounts.Count, $context.Subscription.Name) -ForegroundColor Cyan
 
     forEach ($storageAccount in $storageAccounts){
 
-        Write-Host ('Getting information on {0}'-f $storageAccount.StorageAccountName) -ForegroundColor Cyan
+        Write-Host ('Getting information on the {0} Storage Account'-f $storageAccount.StorageAccountName) -ForegroundColor Cyan
 
         $primaryIP4Addresses = @()
         $secondaryIP4Addresses = @()
