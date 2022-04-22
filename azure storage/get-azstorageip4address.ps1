@@ -26,7 +26,7 @@
         PrimaryInternetEndpointsDNS					SecondaryInternetEndpointsDNS
         PrimaryInternetEndpointsIP4Address  		SecondaryInternetEndpointsIP4Address
 
-        Aggregrated list IPv4 Addresses are stored in:
+        Aggregated list IPv4 Addresses are stored in:
         PrimaryIP4Addresses
         SecondaryIP4Addresses
 
