@@ -1,0 +1,68 @@
+{
+  "$schema": "http://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+              "parameters": {
+                "vmName": {
+                  "type": "string"
+                },
+                "location": {
+                  "type": "string"
+                },
+                "utcValue": {
+                  "type": "string",
+                  "defaultValue": "[utcNow()]"
+                },
+                "scriptContent": {
+                  "type": "string"
+                },
+				"scriptArguments": {
+                  "type": "string"
+                },
+                "userAssignedIdentity": {
+                  "type": "string"
+                },
+                "cleanupPreference": {
+                  "type": "string"
+                }
+              },
+              "variables": {
+                "extensionTypeHandlerVersion": "1.12"
+              },
+              "resources": [
+                {
+                  "type": "Microsoft.Resources/deploymentScripts",
+                  "apiVersion": "2020-10-01",
+                  "name": "[concat('deploymentScript-',parameters('VMName'),'-',parameters('utcValue'))]",
+                  "location": "[parameters('location')]",
+                  "kind": "AzurePowerShell",
+                  "identity": {
+                    "type": "userAssigned",
+                    "userAssignedIdentities": {
+                      "[parameters('userAssignedIdentity')]": {}
+                    }
+                  },
+                  "properties": {
+                    "forceUpdateTag": "1",
+                    "azPowerShellVersion": "8.0",
+					"environmentVariables": [
+						{
+							"name": "subscriptionId",
+							"value": "[subscription().subscriptionId]"
+						},
+						{
+							"name": "vmName",
+							"value": "[parameters('VMName')]"
+						},
+						{
+							"name": "resourceGroup",
+							"value": "[resourceGroup().name]"
+						}
+					],
+                    "scriptContent": "[parameters('scriptContent')]",
+					"arguments": "[parameters('scriptArguments')]",
+                    "retentionInterval": "P1D",
+                    "cleanupPreference": "[parameters('cleanupPreference')]"
+                  }
+                }
+              ]
+}
