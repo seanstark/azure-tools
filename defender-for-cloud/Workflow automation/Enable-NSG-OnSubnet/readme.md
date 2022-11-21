@@ -4,7 +4,9 @@
 
 ## Overview
 
-This workflow responds to the reccomendation **Subnets should be associated with a network security group** by creating a network security and associating it with the subnet. When a NSG is associated with a subnet, the ACL rules apply to all the VM instances and integrated services in that subnet, but don't apply to internal traffic inside the subnet
+This workflow responds to the reccomendation **Subnets should be associated with a network security group** by creating a network security and associating it with the subnet. When a NSG is associated with a subnet, the ACL rules apply to all the VM instances and integrated services in that subnet, but don't apply to internal traffic inside the subnet. 
+
+> This workflow will also remediate **Internet-facing virtual machines should be protected with network security groups** and **Non-internet-facing virtual machines should be protected with network security groups**
 
 ## Requirements
 
