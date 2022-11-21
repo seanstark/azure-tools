@@ -38,7 +38,7 @@ default-nsg-<subnet name>
 
 By default the network security group created will only have the [default network security group rules](https://learn.microsoft.com/azure/virtual-network/network-security-groups-overview#default-security-rules). If desired you can modify the logic app to include deny or allow rules during creation. 
 
-1. From the logic app > Log app designer select **Parameters**
+1. From the Logic app > Log app designer select **Parameters**
 2. Update the **securityRules** parameters with properly formmated json
-    * See examples 
+    * See [examples](https://github.com/seanstark/azure-tools/blob/main/defender-for-cloud/Workflow%20automation/Enable-NSG-OnSubnet/exampleRules.json)
 3. Click **Save**
