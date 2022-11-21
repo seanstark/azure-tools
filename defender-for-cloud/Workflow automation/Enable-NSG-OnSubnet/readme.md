@@ -20,7 +20,7 @@ There is no expected impact that will occur on exisitng resources when the netwo
 
 You can deploy the main template by clicking on the button below:
 
-<a href="https://portal.azure.com/#create/Microsoft.Template/uri/" target="_blank">
+<a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fseanstark%2Fazure-tools%2Fmain%2Fdefender-for-cloud%2FWorkflow%2520automation%2FEnable-NSG-OnSubnet%2FazureDeploy.json" target="_blank">
     <img src="https://aka.ms/deploytoazurebutton"/>
 </a>
 
