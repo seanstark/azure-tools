@@ -14,7 +14,11 @@ This workflow responds to the reccomendation **Subnets should be associated with
 - The Logic App uses a system-assigned Managed Identity. You will need to assign the **Network Contributor** to applicable subscriptions to create and assocaite network security groups. 
 
 ## Expected Impact
-There is no expected impact that will occur on exisitng resources when the network security group is created and associated with an existing subnets. The nsg created will only have the [default network security group rules](https://learn.microsoft.com/azure/virtual-network/network-security-groups-overview#default-security-rules). Please test appropriately. 
+There is no expected impact that will occur on exisitng resources when the network security group is created and associated with an existing subnets. The nsg created will only have the [default network security group rules](https://learn.microsoft.com/azure/virtual-network/network-security-groups-overview#default-security-rules). 
+
+Furthermore the logic will not evaluate GatewaySubnet, AzureFirewallSubnet, and AzureBastionSubnet subnets since the **Subnets should be associated with a network security group** reccomendation does not evaluate these subnet types.
+
+Please test appropriately. 
 
 ## Deployment
 
