@@ -34,7 +34,7 @@
 			"defaultValue": "{\"securityRules\":[]}",
 			"type": "string",
 			"metadata": {
-				"description": "Additional nsg security rules that should be added during the creation of the nsg. Format must be valid json. Example: https://github.com/seanstark/azure-tools/blob/main/defender-for-cloud/Workflow%20automation/Enable-NSG-OnSubnet/exampleRules.json"
+				"description": "Additional nsg security rules that should be added during the creation of the nsg. Format must be valid json. Example:"
 			}
 		}
 	},
