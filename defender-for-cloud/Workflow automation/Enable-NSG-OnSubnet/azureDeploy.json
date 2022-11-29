@@ -24,7 +24,7 @@
 			"type": "string"
 		},
 		"NSGNamePrefix": {
-			"defaultValue": "default-nsg-"
+			"defaultValue": "default-nsg-",
 			"type": "string",
 			"metadata": {
 				"description": "The network security group name prefix. The subnet name will be appended automatically"
