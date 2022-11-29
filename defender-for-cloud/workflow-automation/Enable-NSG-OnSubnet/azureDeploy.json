@@ -32,7 +32,7 @@
 		},
 		"securityRules": {
 			"defaultValue": "{\"securityRules\":[]}",
-			"type": "string",
+			"type": "Object",
 			"metadata": {
 				"description": "Additional nsg security rules that should be added during the creation of the nsg. Format must be valid json. Example: https://github.com/seanstark/azure-tools/blob/main/defender-for-cloud/workflow-automation/Enable-NSG-OnSubnet/exampleRules.json"
 			}
@@ -60,7 +60,7 @@
 							"defaultValue": "[parameters('NSGNamePrefix')]"
 						},
 						"securityRules": {
-							"type": "string",
+							"type": "Object",
 							"defaultValue": "[parameters('securityRules')]"
 						}
 					},
