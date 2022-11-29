@@ -13,7 +13,7 @@ This workflow responds to the following reccomendations by creating a network se
 ## Requirements
 
 - Resource Group **Contributor** rights to deploy the ARM Template
-- The Logic App uses a system-assigned Managed Identity. You will need to assign the **Network Contributor** to applicable subscriptions to create and assocaite network security groups. 
+- The Logic App uses a system-assigned Managed Identity. You will need to assign the **Network Contributor** and **Reader** role to applicable subscriptions to create and assocaite network security groups. 
 
 ## Expected Impact
 There is no expected impact that will occur on exisitng resources when the network security group is created and associated with an existing subnets. The nsg created will only have the [default network security group rules](https://learn.microsoft.com/azure/virtual-network/network-security-groups-overview#default-security-rules). 
@@ -30,6 +30,7 @@ You can deploy the main template by clicking on the button below:
 
 1. After you have deployed the logic app assign the system managed identity the following roles
     - Network Contributor
+    - Reader
     
 2. Create a new Workflow Automation in Defender for Cloud
     - Trigger Conditions
