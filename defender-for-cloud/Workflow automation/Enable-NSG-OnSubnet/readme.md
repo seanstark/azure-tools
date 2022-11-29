@@ -4,9 +4,7 @@
 
 ## Overview
 
-This workflow responds to the reccomendation **Subnets should be associated with a network security group** by creating a network security group and associating it with the subnet. When a NSG is associated with a subnet, the ACL rules apply to all the VM instances and integrated services in that subnet, but don't apply to internal traffic inside the subnet. 
-
-> This workflow will also remediate **Internet-facing virtual machines should be protected with network security groups** and **Non-internet-facing virtual machines should be protected with network security groups**
+This workflow responds to the reccomendation **Non-internet-facing virtual machines should be protected with network security groups** and **Internet-facing virtual machines should be protected with network security groups** by creating a network security group and associating it with the subnet. When a NSG is associated with a subnet, the ACL rules apply to all the VM instances and integrated services in that subnet, but don't apply to internal traffic inside the subnet. 
 
 ## Requirements
 
@@ -15,8 +13,6 @@ This workflow responds to the reccomendation **Subnets should be associated with
 
 ## Expected Impact
 There is no expected impact that will occur on exisitng resources when the network security group is created and associated with an existing subnets. The nsg created will only have the [default network security group rules](https://learn.microsoft.com/azure/virtual-network/network-security-groups-overview#default-security-rules). 
-
-Furthermore the logic will not evaluate GatewaySubnet, AzureFirewallSubnet, and AzureBastionSubnet subnets since the **Subnets should be associated with a network security group** reccomendation does not evaluate these subnet types.
 
 Please test appropriately. 
 
@@ -32,7 +28,7 @@ You can deploy the main template by clicking on the button below:
 ## Configuration Options
 
 ### Network Security Group Name
-The logic app leverages the parameter **defaultNSGName** which is used as the nsg name during creation. By default this is set to "default-nsg" and appended with the subnet name during creation. 
+The logic app leverages the parameter **defaultNSGName** which is used as the nsg name during creation. By default this is set to "default-nsg-" and appended with the subnet name during creation. 
 
 ``` 
 default-nsg-<subnet name>
