@@ -1,10 +1,12 @@
 
 
-# Enable a Network Security on a Subnet
+# Enable a Network Security Group on a Subnet
 
 ## Overview
 
-This workflow responds to the reccomendation **Non-internet-facing virtual machines should be protected with network security groups** and **Internet-facing virtual machines should be protected with network security groups** by creating a network security group and associating it with the subnet. When a NSG is associated with a subnet, the ACL rules apply to all the VM instances and integrated services in that subnet, but don't apply to internal traffic inside the subnet. 
+This workflow responds to the following reccomendations by creating a network security group and associating it with the subnet. When a NSG is associated with a subnet, the ACL rules apply to all the VM instances and integrated services in that subnet, but don't apply to internal traffic inside the subnet. 
+- **Non-internet-facing virtual machines should be protected with network security groups** 
+- **Internet-facing virtual machines should be protected with network security groups** 
 
 ## Requirements
 
