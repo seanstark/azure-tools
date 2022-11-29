@@ -22,7 +22,7 @@ Please test appropriately.
 
 You can deploy the main template by clicking on the button below:
 
-<a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fseanstark%2Fazure-tools%2Fmain%2Fdefender-for-cloud%2FWorkflow%2520automation%2FEnable-NSG-OnSubnet%2FazureDeploy.json" target="_blank">
+<a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fseanstark%2Fazure-tools%2Fmain%2Fdefender-for-cloud%2Fworkflow-automation%2FEnable-NSG-OnSubnet%2FazureDeploy.json" target="_blank">
     <img src="https://aka.ms/deploytoazurebutton"/>
 </a>
 
@@ -42,5 +42,5 @@ By default the network security group created will only have the [default networ
 
 1. From the Logic app > Log app designer select **Parameters**
 2. Update the **securityRules** parameters with properly formmated json
-    * See [examples](https://github.com/seanstark/azure-tools/blob/main/defender-for-cloud/Workflow%20automation/Enable-NSG-OnSubnet/exampleRules.json)
+    * See [examples](https://github.com/seanstark/azure-tools/blob/main/defender-for-cloud/workflow-automation/Enable-NSG-OnSubnet/exampleRules.json)
 3. Click **Save**
