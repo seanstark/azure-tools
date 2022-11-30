@@ -430,7 +430,10 @@
 			"name": "[parameters('PlaybookName')]",
 			"type": "Microsoft.Logic/workflows",
 			"location": "[resourceGroup().location]",
-			"tags": {},
+			"tags": {
+				"hidden-SentinelTemplateName": "[parameters('PlaybookName')]",
+				"hidden-SentinelTemplateVersion": "1.0"
+			},
 			"identity": {
 				"type": "SystemAssigned"
 			},
