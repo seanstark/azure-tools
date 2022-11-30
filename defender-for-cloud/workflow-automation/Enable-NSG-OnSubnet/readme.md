@@ -42,6 +42,7 @@ You can deploy the main template by clicking on the button below:
     
 2. Create a new Workflow Automation in Defender for Cloud
     - Trigger Conditions
+    
         - **Defender for Cloud data type:** Recommendation
         - **Recommendation name:** Non-internet-facing virtual machines should be protected with network security groups and Internet-facing virtual machines should be protected with network security groups
         - **Recommendation State:** Unhealthy
