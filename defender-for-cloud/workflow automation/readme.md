@@ -2,9 +2,17 @@
 
 # Enable a Network Security Group on a Subnet
 
+- [Overview](#overview)
+- [Requirements](#requirements)
+- [Expected Impact](#expected-impact)
+- [Deployment](#deployment)
+- [Configuration Options](#configuration-options)
+    - [Network Security Group Name](#network-security-group-name)
+    - [Default Security Rules](#default-security-rules)
+
 ## Overview
 
-This workflow responds to the following reccomendations by creating a network security group and associating it with the subnet. 
+This workflow responds to the following recommendations by creating a network security group and associating it with the subnet. 
 - **Non-internet-facing virtual machines should be protected with network security groups** 
 - **Internet-facing virtual machines should be protected with network security groups** 
 
@@ -13,10 +21,10 @@ This workflow responds to the following reccomendations by creating a network se
 ## Requirements
 
 - Resource Group **Contributor** rights to deploy the ARM Template
-- The Logic App uses a system-assigned Managed Identity. You will need to assign the **Network Contributor** and **Reader** role to applicable subscriptions to create and assocaite network security groups. 
+- The Logic App uses a system-assigned managed identity. You will need to assign the **Network Contributor** and **Reader** role to applicable subscriptions to create and associate network security groups. 
 
 ## Expected Impact
-There is no expected impact that will occur on exisitng resources when the network security group is created and associated with an existing subnets. The nsg created will only have the [default network security group rules](https://learn.microsoft.com/azure/virtual-network/network-security-groups-overview#default-security-rules). 
+There is no expected impact that will occur on existing resources when the network security group is created and associated with an existing subnets. The nsg created will only have the [default network security group rules](https://learn.microsoft.com/azure/virtual-network/network-security-groups-overview#default-security-rules). 
 
 Please test appropriately. 
 
@@ -34,9 +42,10 @@ You can deploy the main template by clicking on the button below:
     
 2. Create a new Workflow Automation in Defender for Cloud
     - Trigger Conditions
+    
         - **Defender for Cloud data type:** Recommendation
-        - **Reccomendation name:** Non-internet-facing virtual machines should be protected with network security groups and Internet-facing virtual machines should be protected with network security groups
-        - **Reccomendation State:** Unhealthy
+        - **Recommendation name:** Non-internet-facing virtual machines should be protected with network security groups and Internet-facing virtual machines should be protected with network security groups
+        - **Recommendation State:** Unhealthy
 
 ## Configuration Options
 
@@ -47,11 +56,11 @@ The logic app leverages the parameter **defaultNSGName** which is used as the ns
 default-nsg-<subnet name>
 ```
 
-### Default Rules
+### Default Security Rules
 
 By default the network security group created will only have the [default network security group rules](https://learn.microsoft.com/azure/virtual-network/network-security-groups-overview#default-security-rules). If desired you can modify the logic app to include deny or allow rules during creation. 
 
 1. From the Logic app > Log app designer select **Parameters**
 2. Update the **securityRules** parameters with properly formmated json
-    * See [examples](https://github.com/Azure/Microsoft-Defender-for-Cloud/blob/main/Workflow%20automation/Enable-NSG-OnSubnet/exampleRules.json)
+    * See [examples](https://github.com/seanstark/azure-tools/blob/main/defender-for-cloud/workflow-automation/Enable-NSG-OnSubnet/exampleRules.json)
 3. Click **Save**
