@@ -2,6 +2,14 @@
 
 # Enable a Network Security Group on a Subnet
 
+- [Overview](#overview)
+- [Requirements](#requirements)
+- [Expected Impact](#expected-impact)
+- [Deployment](#deployment)
+- [Configuration Options](#configuration-options)
+    - [Network Security Group Name](#network-security-group-name)
+    - [Default Security Rules](#default-security-rules)
+
 ## Overview
 
 This workflow responds to the following reccomendations by creating a network security group and associating it with the subnet. 
@@ -47,7 +55,7 @@ The logic app leverages the parameter **defaultNSGName** which is used as the ns
 default-nsg-<subnet name>
 ```
 
-### Default Rules
+### Default Security Rules
 
 By default the network security group created will only have the [default network security group rules](https://learn.microsoft.com/azure/virtual-network/network-security-groups-overview#default-security-rules). If desired you can modify the logic app to include deny or allow rules during creation. 
 
