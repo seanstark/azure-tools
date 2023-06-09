@@ -1,3 +1,5 @@
+// Lists NICs without Network Security Groups
+
 Resources
 | where type =~ 'microsoft.network/networkinterfaces'
 | project id, ipConfigurations = properties.ipConfigurations
