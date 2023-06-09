@@ -1,0 +1,14 @@
+resources
+| where type == "microsoft.network/loadbalancers"
+| mvexpand loadBalancingRules = properties.loadBalancingRules
+| extend protocol = loadBalancingRules.properties.protocol
+| extend frontendPort = loadBalancingRules.properties.frontendPort
+| extend backendPort = loadBalancingRules.properties.backendPort
+| mvexpand frontendIPConfigurations = properties.frontendIPConfigurations
+//| mvexpand backendAddressPools = loadBalancingRules.properties.backendAddressPools
+//| extend frontendIPId = frontendIPConfiguration.id
+//| extend backendPoolId = backendAddressPools.id
+| where isnotempty(frontendIPConfigurations.properties.publicIPAddress)
+| extend lbPublicIPAddress = frontendIPConfigurations.properties.publicIPAddress.id
+| where frontendPort in ('22','3389','5985','5986') or backendPort in ('22','3389''5985','5986')
+//| project id, lbName = name, lbSubscriptionId = subscriptionId, lbResourceGroup = resourceGroup, protocol, frontendPort, backendPort, frontendIPId, backendPoolId
