@@ -1,0 +1,14 @@
+Resources
+| where type =~ 'microsoft.network/networkinterfaces'
+| project id, ipConfigurations = properties.ipConfigurations
+| mvexpand ipConfigurations
+| project id, subnetId = tostring(ipConfigurations.properties.subnet.id)
+| parse kind=regex subnetId with '/virtualNetworks/' virtualNetwork '/subnets/' subnet
+| project id, virtualNetwork, subnet
+| join kind=leftouter (
+    Resources
+    | where type =~ 'microsoft.network/networksecuritygroups'
+    | mvexpand associatedNic = properties.networkInterfaces
+    | extend associatedNic = tostring(associatedNic.id)
+    | project nsgId = id, nsgName = name, nsgresourceGroup = resourceGroup, nsgSubscription = subscriptionId, associatedNic) on $left.id == $right.associatedNic
+| where isempty( nsgId)
