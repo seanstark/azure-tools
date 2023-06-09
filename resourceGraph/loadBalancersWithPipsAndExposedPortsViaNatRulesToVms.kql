@@ -1,0 +1,40 @@
+resources
+| where type == "microsoft.network/loadbalancers"
+| mvexpand frontendIPConfigurations = properties.frontendIPConfigurations
+| where isnotempty(frontendIPConfigurations.properties.publicIPAddress)
+| extend lbPublicIPAddress = frontendIPConfigurations.properties.publicIPAddress.id
+| extend inboundNatRules = properties.inboundNatRules
+| project id, lbName = name, lbSubscriptionId = subscriptionId, lbResourceGroup = resourceGroup, lbPublicIPAddress, inboundNatRules
+| where array_length(inboundNatRules) > 0
+| mvexpand inboundNatRule = inboundNatRules
+| extend protocol = inboundNatRule.properties.protocol
+| extend frontendPort = inboundNatRule.properties.frontendPort
+| extend backendPort = inboundNatRule.properties.backendPort
+| extend backendIp = tostring(split(tostring(inboundNatRule.properties.backendIPConfiguration.id), '/ipConfigurations', 0)[0])
+| where frontendPort in ('22','3389','5985','5986') or backendPort in ('22','3389''5985','5986')
+| project id, lbName, lbSubscriptionId, lbResourceGroup, lbPublicIPAddress, protocol, frontendPort, backendPort, backendIp, inboundNatRule
+| join kind=leftouter (
+    Resources
+| where type =~ 'microsoft.compute/virtualmachines'
+| extend powerState = tostring(properties.extended.instanceView.powerState.displayStatus)
+| extend nics=array_length(properties.networkProfile.networkInterfaces)
+| mv-expand nic=properties.networkProfile.networkInterfaces
+| where nics == 1 or nic.properties.primary =~ 'true' or isempty(nic)
+| project subscriptionId, resourceGroup, vmId = id, vmName = name, powerState, nicId = tostring(nic.id)
+| join kind=leftouter (
+  Resources
+  | where type =~ 'microsoft.network/networkinterfaces'
+  | extend ipConfigsCount=array_length(properties.ipConfigurations)
+  | mv-expand ipconfig=properties.ipConfigurations
+  | where ipConfigsCount == 1 or ipconfig.properties.primary =~ 'true'
+  | project nicId = id, publicIpId = tostring(ipconfig.properties.publicIPAddress.id)) on nicId
+| project-away nicId1
+| summarize by vmId, vmName, powerState, nicId, publicIpId, subscriptionId, resourceGroup
+| join kind=leftouter (
+  Resources
+  | where type =~ 'microsoft.network/publicipaddresses'
+  | extend tier = sku.tier
+  | extend sku = sku.name
+  | project publicIpId = id, publicIpAddress = properties.ipAddress, sku, tier) on publicIpId
+| project-away publicIpId1 ) on $left.backendIp == $right.nicId
+| order by ['vmName'] asc
