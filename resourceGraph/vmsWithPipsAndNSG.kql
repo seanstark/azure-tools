@@ -29,5 +29,5 @@ Resources
     | mvexpand associatedNic = properties.networkInterfaces
     | extend associatedNic = tostring(associatedNic.id)
     | project nsgId = id, associatedNic) on $left.nicId == $right.associatedNic
-| where isnotempty(nsgId)
+| where isnotempty(nsgId) and isnotempty(publicIpId)
 | project-away associatedNic
