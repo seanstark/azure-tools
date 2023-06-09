@@ -8,4 +8,4 @@ resources
 | where isnotempty(frontendIPConfigurations.properties.publicIPAddress)
 | extend lbPublicIPAddress = frontendIPConfigurations.properties.publicIPAddress.id
 | where frontendPort in ('22','3389','5985','5986') or backendPort in ('22','3389''5985','5986')
-| project id, lbName = name, lbSubscriptionId = subscriptionId, lbResourceGroup = resourceGroup, protocol, frontendPort, backendPort
+| project id, lbName = name, lbSubscriptionId = subscriptionId, lbResourceGroup = resourceGroup, lbPublicIPAddress, protocol, frontendPort, backendPort
