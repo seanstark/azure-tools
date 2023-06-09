@@ -26,5 +26,6 @@ Resources
     | where type =~ 'microsoft.network/networksecuritygroups'
     | mvexpand associatedNic = properties.networkInterfaces
     | extend associatedNic = tostring(associatedNic.id)
-    | project nsgId = id, nsgName = name, nsgresourceGroup = resourceGroup, nsgSubscription = subscriptionId, associatedNic) on $left.nicId == $right.associatedNic
-| where isempty( nsgId)
+    | project nsgId = id, associatedNic) on $left.nicId == $right.associatedNic
+| where isempty(nsgId)
+| project-away nsgId, associatedNic
