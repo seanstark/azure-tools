@@ -1,0 +1,33 @@
+// List virtual machines with Basic Public IP Addresses and No Network Security Groups
+
+Resources
+| where type =~ 'microsoft.compute/virtualmachines'
+| extend powerState = tostring(properties.extended.instanceView.powerState.displayStatus)
+| extend nics=array_length(properties.networkProfile.networkInterfaces)
+| mv-expand nic=properties.networkProfile.networkInterfaces
+| where nics == 1 or nic.properties.primary =~ 'true' or isempty(nic)
+| project subscriptionId, resourceGroup, vmId = id, vmName = name, powerState, nicId = tostring(nic.id)
+| join kind=leftouter (
+  Resources
+  | where type =~ 'microsoft.network/networkinterfaces'
+  | extend ipConfigsCount=array_length(properties.ipConfigurations)
+  | mv-expand ipconfig=properties.ipConfigurations
+  | where ipConfigsCount == 1 or ipconfig.properties.primary =~ 'true'
+  | project nicId = id, publicIpId = tostring(ipconfig.properties.publicIPAddress.id)) on nicId
+| project-away nicId1
+| summarize by vmId, vmName, powerState, nicId, publicIpId, subscriptionId, resourceGroup
+| join kind=leftouter (
+  Resources
+  | where type =~ 'microsoft.network/publicipaddresses'
+  | extend tier = sku.tier
+  | extend sku = sku.name
+  | project publicIpId = id, publicIpAddress = properties.ipAddress, sku, tier) on publicIpId
+| project-away publicIpId1
+| join kind=leftouter (
+    Resources
+    | where type =~ 'microsoft.network/networksecuritygroups'
+    | mvexpand associatedNic = properties.networkInterfaces
+    | extend associatedNic = tostring(associatedNic.id)
+    | project nsgId = id, associatedNic) on $left.nicId == $right.associatedNic
+| where isempty(nsgId) and isnotempty(publicIpId) and sku == 'Basic'
+| project-away nsgId, associatedNic
