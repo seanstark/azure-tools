@@ -1,3 +1,5 @@
+// List virtual machines with Public IP Addresses
+
 Resources
 | where type =~ 'microsoft.compute/virtualmachines'
 | extend powerState = tostring(properties.extended.instanceView.powerState.displayStatus)
