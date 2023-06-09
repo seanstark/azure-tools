@@ -12,6 +12,6 @@ resources
 | extend protocol = inboundNatRule.properties.protocol
 | extend frontendPort = inboundNatRule.properties.frontendPort
 | extend backendPort = inboundNatRule.properties.backendPort
-| extend backendIp = inboundNatRule.properties.backendIPConfiguration.id
+| extend backendIp = tostring(split(tostring(inboundNatRule.properties.backendIPConfiguration.id), '/ipConfigurations', 0)[0])
 | where frontendPort in ('22','3389','5985','5986') or backendPort in ('22','3389''5985','5986')
 | project id, lbName, lbSubscriptionId, lbResourceGroup, lbPublicIPAddress, protocol, frontendPort, backendPort, backendIp, inboundNatRule
