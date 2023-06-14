@@ -1,0 +1,6 @@
+Resources 
+| where type =~ "microsoft.network/virtualnetworks" 
+| mv-expand subnet = properties.subnets
+| where array_length(subnet.properties.ipConfigurations) > 0
+| where isempty(subnet.properties.networkSecurityGroup)
+| project vnetId = id, vnetName = name, vnetNameSubscriptionId = subscriptionId, vnetResourceGroup = resourceGroup, subnetName = subnet.name, subnetipConfigurations = subnet.properties.ipConfigurations, subnetnetworkSecurityGroup = subnet.properties.networkSecurityGroup, subnetAddressPrefix = subnet.properties.addressPrefix, subnetId = subnet.id
