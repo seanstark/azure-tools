@@ -1,4 +1,4 @@
-// List virtual machines with Public IP Addresses and No Network Security Groups
+// List virtual machines with Public IP Addresses and No Network Security Groups either attached to the nic or subnet
 
 Resources
 | where type =~ 'microsoft.compute/virtualmachines'
@@ -13,9 +13,20 @@ Resources
   | extend ipConfigsCount=array_length(properties.ipConfigurations)
   | mv-expand ipconfig=properties.ipConfigurations
   | where ipConfigsCount == 1 or ipconfig.properties.primary =~ 'true'
-  | project nicId = id, publicIpId = tostring(ipconfig.properties.publicIPAddress.id)) on nicId
+  | extend subnetId = tostring(ipconfig.properties.subnet.id)
+  | project nicId = id, publicIpId = tostring(ipconfig.properties.publicIPAddress.id), subnetId
+  | join kind=leftouter (
+    Resources 
+    | where type =~ "microsoft.network/virtualnetworks" 
+    | mv-expand subnet = properties.subnets
+    | where array_length(subnet.properties.ipConfigurations) > 0
+    | project vnetId = id, vnetName = name, vnetNameSubscriptionId = subscriptionId, vnetResourceGroup = resourceGroup, subnetName = tostring(subnet.name),
+    subnetipConfigurations = subnet.properties.ipConfigurations, subnetnetworkSecurityGroup = tostring(subnet.properties.networkSecurityGroup.id),
+    subnetAddressPrefix = tostring(subnet.properties.addressPrefix), subnetId = tostring(subnet.id)
+    ) on subnetId
+  ) on nicId
 | project-away nicId1
-| summarize by vmId, vmName, powerState, nicId, publicIpId, subscriptionId, resourceGroup
+| summarize by vmId, vmName, powerState, nicId, publicIpId, subscriptionId, resourceGroup, vnetName, subnetName, subnetId, subnetnetworkSecurityGroup
 | join kind=leftouter (
   Resources
   | where type =~ 'microsoft.network/publicipaddresses'
@@ -29,5 +40,5 @@ Resources
     | mvexpand associatedNic = properties.networkInterfaces
     | extend associatedNic = tostring(associatedNic.id)
     | project nsgId = id, associatedNic) on $left.nicId == $right.associatedNic
-| where isempty(nsgId) and isnotempty(publicIpId)
-| project-away nsgId, associatedNic
+| where isempty(nsgId) and isnotempty(publicIpAddress) and isempty(subnetnetworkSecurityGroup)
+| project-away nsgId, associatedNic, subnetnetworkSecurityGroup
