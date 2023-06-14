@@ -20,7 +20,7 @@ resources
 |extend action=rules.properties.access
 |extend subnets = strcat_array(properties.subnets, ",")
 | where direction == 'Inbound'
-| where destination_port in ('22','3389''5985','5986')
+| where destination_port in ('22','3389','5985','5986')
 | where source in ('Any', 'Internet')
-|project SubscriptionName, resourceGroup, nsg_name, rule_name, subnets, direction, priority, action, source, source_port, destination, destination_port, description, subscriptionId, id
-|sort by SubscriptionName, resourceGroup asc, nsg_name, direction asc, priority asc
+| project SubscriptionName, resourceGroup, nsg_name, rule_name, subnets, direction, priority, action, source, source_port, destination, destination_port, description, subscriptionId, id
+
