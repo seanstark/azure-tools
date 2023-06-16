@@ -1,0 +1,7 @@
+Resources
+| where type =~ 'microsoft.network/networkinterfaces'
+| where array_length(properties.ipConfigurations) > 0
+| extend networkSecurityGroup = properties.networkSecurityGroup.id, vmId = properties.virtualMachine.id
+| mv-expand ipConfiguration = properties.ipConfigurations
+| extend subnetId = tostring(ipConfiguration.properties.subnet.id), privateIPAddress = ipConfiguration.properties.privateIPAddress, publicIPAddressId = tostring(ipConfiguration.properties.publicIPAddress.id), networkInterfaceId = id, networkInterfaceName = ipConfiguration.name, networkInterfaceIsPrimary = ipConfiguration.properties.primary
+| project networkInterfaceId, networkInterfaceName, subnetId, privateIPAddress, publicIPAddressId, networkInterfaceIsPrimary
