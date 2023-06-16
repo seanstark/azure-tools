@@ -35,4 +35,4 @@ networkInterfaceId = tostring(networkInterface.id), networkInterfaceIsPrimary = 
         subnetAddressPrefix = tostring(subnet.properties.addressPrefix), subnetId = tostring(subnet.id)
     ) on subnetId
 | project-away subnetName1, subnetId1
-| where isnotempty(publicIPAddress )
+| where isnotempty(publicIPAddress)
