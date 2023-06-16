@@ -17,7 +17,7 @@ networkInterfaceId = tostring(networkInterface.id), networkInterfaceIsPrimary = 
     | extend subnetName = split(subnetId, '/')[-1], networkInterfaceNSGName = split(networkInterfaceNSGiD, '/')[-1]
     | project networkInterfaceId, networkInterfaceName, networkInterfaceNSGName, networkInterfaceNSGiD, subnetId, subnetName, privateIPAddress, publicIPAddressId, networkInterfaceIsPrimary
     ) on networkInterfaceId
-| project-away networkInterfaceId1
+| project-away networkInterfaceId1, networkInterfaceIsPrimary1
 | join kind=leftouter (
     Resources
     | where type =~ 'microsoft.network/publicipaddresses'
@@ -30,9 +30,12 @@ networkInterfaceId = tostring(networkInterface.id), networkInterfaceIsPrimary = 
     | where type =~ "microsoft.network/virtualnetworks"
     | mv-expand subnet = properties.subnets
     | where array_length(subnet.properties.ipConfigurations) > 0
-    | project vnetId = id, vnetName = name, vnetNameSubscriptionId = subscriptionId, vnetResourceGroup = resourceGroup, subnetName = tostring(subnet.name),
-        subnetipConfigurations = subnet.properties.ipConfigurations, subnetnetworkSecurityGroup = tostring(subnet.properties.networkSecurityGroup.id),
+    | extend vnetId = id, vnetName = name, vnetNameSubscriptionId = subscriptionId, vnetResourceGroup = resourceGroup, subnetName = tostring(subnet.name),
+        subnetipConfigurations = subnet.properties.ipConfigurations, subnetnetworkSecurityGroupid = tostring(subnet.properties.networkSecurityGroup.id),
         subnetAddressPrefix = tostring(subnet.properties.addressPrefix), subnetId = tostring(subnet.id)
+    | extend subnetnetworkSecurityGroupName = tostring(split(subnetnetworkSecurityGroupid, '/')[-1])
+    | project vnetId, vnetName, vnetNameSubscriptionId, vnetResourceGroup, subnetName, subnetId, subnetnetworkSecurityGroupName,
+        subnetnetworkSecurityGroupid, subnetAddressPrefix, subnetipConfigurations
     ) on subnetId
 | project-away subnetName1, subnetId1
 | where isnotempty(publicIPAddress)
