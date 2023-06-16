@@ -1,33 +1,41 @@
-// List virtual machines with Basic Public IP Addresses and No Network Security Groups
+// List virtual machines with Basic Public IP Addresses and No Network Security Groups either attached to the nic or subnet
 
 Resources
 | where type =~ 'microsoft.compute/virtualmachines'
-| extend powerState = tostring(properties.extended.instanceView.powerState.displayStatus)
-| extend nics=array_length(properties.networkProfile.networkInterfaces)
-| mv-expand nic=properties.networkProfile.networkInterfaces
-| where nics == 1 or nic.properties.primary =~ 'true' or isempty(nic)
-| project subscriptionId, resourceGroup, vmId = id, vmName = name, powerState, nicId = tostring(nic.id)
-| join kind=leftouter (
-  Resources
-  | where type =~ 'microsoft.network/networkinterfaces'
-  | extend ipConfigsCount=array_length(properties.ipConfigurations)
-  | mv-expand ipconfig=properties.ipConfigurations
-  | where ipConfigsCount == 1 or ipconfig.properties.primary =~ 'true'
-  | project nicId = id, publicIpId = tostring(ipconfig.properties.publicIPAddress.id)) on nicId
-| project-away nicId1
-| summarize by vmId, vmName, powerState, nicId, publicIpId, subscriptionId, resourceGroup
-| join kind=leftouter (
-  Resources
-  | where type =~ 'microsoft.network/publicipaddresses'
-  | extend tier = sku.tier
-  | extend sku = sku.name
-  | project publicIpId = id, publicIpAddress = properties.ipAddress, sku, tier) on publicIpId
-| project-away publicIpId1
+| where array_length(properties.networkProfile.networkInterfaces) > 0
+| mv-expand networkInterface = properties.networkProfile.networkInterfaces
+| extend vmId = tostring(id), vmName = name, powerState = tostring(properties.extended.instanceView.powerState.displayStatus), 
+networkInterfaceId = tostring(networkInterface.id), networkInterfaceIsPrimary = networkInterface.properties.primary
+| project vmName, vmId, powerState, subscriptionId, resourceGroup, networkInterfaceId, networkInterfaceIsPrimary
 | join kind=leftouter (
     Resources
-    | where type =~ 'microsoft.network/networksecuritygroups'
-    | mvexpand associatedNic = properties.networkInterfaces
-    | extend associatedNic = tostring(associatedNic.id)
-    | project nsgId = id, associatedNic) on $left.nicId == $right.associatedNic
-| where isempty(nsgId) and isnotempty(publicIpId) and sku == 'Basic'
-| project-away nsgId, associatedNic
+    | where type =~ 'microsoft.network/networkinterfaces'
+    | where array_length(properties.ipConfigurations) > 0
+    | extend networkInterfaceNSGiD = properties.networkSecurityGroup.id, vmId = properties.virtualMachine.id
+    | mv-expand ipConfiguration = properties.ipConfigurations
+    | extend subnetId = tostring(ipConfiguration.properties.subnet.id), privateIPAddress = ipConfiguration.properties.privateIPAddress, publicIPAddressId = tostring(ipConfiguration.properties.publicIPAddress.id), networkInterfaceId = id, networkInterfaceName = ipConfiguration.name, networkInterfaceIsPrimary = ipConfiguration.properties.primary
+    | extend subnetName = split(subnetId, '/')[-1], networkInterfaceNSGName = split(networkInterfaceNSGiD, '/')[-1]
+    | project networkInterfaceId, networkInterfaceName, networkInterfaceNSGName, networkInterfaceNSGiD, subnetId, subnetName, privateIPAddress, publicIPAddressId, networkInterfaceIsPrimary
+    ) on networkInterfaceId
+| project-away networkInterfaceId1, networkInterfaceIsPrimary1
+| join kind=leftouter (
+    Resources
+    | where type =~ 'microsoft.network/publicipaddresses'
+    | extend publicIPAddresstier = sku.tier, publicIPAddresssku = sku.name, publicIPAddressId = id, publicIPAddressName = name, publicIPAddress = properties.ipAddress
+    | project publicIPAddress, publicIPAddressName, publicIPAddresssku, publicIPAddresstier, publicIPAddressId
+    ) on publicIPAddressId
+| project-away publicIPAddressId1
+| join kind=leftouter (
+    Resources 
+    | where type =~ "microsoft.network/virtualnetworks"
+    | mv-expand subnet = properties.subnets
+    | where array_length(subnet.properties.ipConfigurations) > 0
+    | extend vnetId = id, vnetName = name, vnetNameSubscriptionId = subscriptionId, vnetResourceGroup = resourceGroup, subnetName = tostring(subnet.name),
+        subnetipConfigurations = subnet.properties.ipConfigurations, subnetnetworkSecurityGroupid = tostring(subnet.properties.networkSecurityGroup.id),
+        subnetAddressPrefix = tostring(subnet.properties.addressPrefix), subnetId = tostring(subnet.id)
+    | extend subnetnetworkSecurityGroupName = tostring(split(subnetnetworkSecurityGroupid, '/')[-1])
+    | project vnetId, vnetName, vnetNameSubscriptionId, vnetResourceGroup, subnetName, subnetId, subnetnetworkSecurityGroupName,
+        subnetnetworkSecurityGroupid, subnetAddressPrefix, subnetipConfigurations
+    ) on subnetId
+| project-away subnetName1, subnetId1
+| where isnotempty(publicIPAddress) and (isempty(networkInterfaceNSGName) and isempty(subnetnetworkSecurityGroupid)) and publicIPAddresssku == 'Basic'
