@@ -11,11 +11,11 @@ networkInterfaceId = tostring(networkInterface.id), networkInterfaceIsPrimary = 
     Resources
     | where type =~ 'microsoft.network/networkinterfaces'
     | where array_length(properties.ipConfigurations) > 0
-    | extend networkSecurityGroup = properties.networkSecurityGroup.id, vmId = properties.virtualMachine.id
+    | extend networkInterfaceNSGiD = properties.networkSecurityGroup.id, vmId = properties.virtualMachine.id
     | mv-expand ipConfiguration = properties.ipConfigurations
     | extend subnetId = tostring(ipConfiguration.properties.subnet.id), privateIPAddress = ipConfiguration.properties.privateIPAddress, publicIPAddressId = tostring(ipConfiguration.properties.publicIPAddress.id), networkInterfaceId = id, networkInterfaceName = ipConfiguration.name, networkInterfaceIsPrimary = ipConfiguration.properties.primary
-    | extend subnetName = split(subnetId, '/')[-1]
-    | project networkInterfaceId, networkInterfaceName, subnetId, subnetName, privateIPAddress, publicIPAddressId, networkInterfaceIsPrimary
+    | extend subnetName = split(subnetId, '/')[-1], networkInterfaceNSGName = split(networkInterfaceNSGiD, '/')[-1]
+    | project networkInterfaceId, networkInterfaceName, networkInterfaceNSGName, networkInterfaceNSGiD, subnetId, subnetName, privateIPAddress, publicIPAddressId, networkInterfaceIsPrimary
     ) on networkInterfaceId
 | project-away networkInterfaceId1
 | join kind=leftouter (
@@ -25,3 +25,14 @@ networkInterfaceId = tostring(networkInterface.id), networkInterfaceIsPrimary = 
     | project publicIPAddress, publicIPAddressName, publicIPAddresssku, publicIPAddresstier, publicIPAddressId
     ) on publicIPAddressId
 | project-away publicIPAddressId1
+| join kind=leftouter (
+    Resources 
+    | where type =~ "microsoft.network/virtualnetworks"
+    | mv-expand subnet = properties.subnets
+    | where array_length(subnet.properties.ipConfigurations) > 0
+    | project vnetId = id, vnetName = name, vnetNameSubscriptionId = subscriptionId, vnetResourceGroup = resourceGroup, subnetName = tostring(subnet.name),
+        subnetipConfigurations = subnet.properties.ipConfigurations, subnetnetworkSecurityGroup = tostring(subnet.properties.networkSecurityGroup.id),
+        subnetAddressPrefix = tostring(subnet.properties.addressPrefix), subnetId = tostring(subnet.id)
+    ) on subnetId
+| project-away subnetName1, subnetId1
+| where isnotempty(publicIPAddress )
