@@ -1,0 +1,7 @@
+Resources
+| where type =~ 'microsoft.compute/virtualmachines'
+| where array_length(properties.networkProfile.networkInterfaces) > 0
+| mv-expand networkInterface = properties.networkProfile.networkInterfaces
+| extend vmId = tostring(id), vmName = name, powerState = tostring(properties.extended.instanceView.powerState.displayStatus), 
+networkInterfaceId = tostring(networkInterface.id), networkInterfaceIsPrimary = networkInterface.properties.primary
+| project vmName, vmId, powerState, subscriptionId, resourceGroup, networkInterfaceId, networkInterfaceIsPrimary
