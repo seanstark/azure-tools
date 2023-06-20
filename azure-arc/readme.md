@@ -19,10 +19,7 @@ resources
 
 You can deploy the main template by clicking on the button below:
 
-<a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fseanstark%2Fazure-tools%2Fmain%2Fazure-arc%2Farc-unhealthymachines.json" target="_blank">
-    <img src="https://aka.ms/deploytoazurebutton"/>
-</a>
-
+<a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fseanstark%2Fazure-tools%2Fmain%2Fazure-arc%2Farc-unhealthymachines.json" target="_blank"><img src="https://aka.ms/deploytoazurebutton"/></a>
 
 1. After you have deployed the logic app assign the system managed identity the following roles
     - Reader
