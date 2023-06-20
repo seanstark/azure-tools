@@ -1,1 +1,283 @@
-tt
+{
+	"$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"metadata": {
+		"title": "",
+		"description": "",
+		"prerequisites": "",
+		"postDeployment": [],
+		"prerequisitesDeployTemplateFile": "",
+		"lastUpdateTime": "",
+		"entities": [],
+		"tags": [],
+		"support": {
+			"tier": "community",
+			"armtemplate": "Generated from https://github.com/Azure/Azure-Sentinel/tree/master/Tools/Playbook-ARM-Template-Generator"
+		},
+		"author": {
+			"name": ""
+		}
+	},
+	"parameters": {
+		"PlaybookName": {
+			"defaultValue": "arc-unhealthymachines",
+			"type": "string"
+		}
+	},
+	"variables": {},
+	"resources": [
+		{
+			"properties": {
+				"provisioningState": "Succeeded",
+				"state": "Enabled",
+				"definition": {
+					"$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+					"contentVersion": "1.0.0.0",
+					"parameters": {
+						"$connections": {
+							"defaultValue": {},
+							"type": "Object"
+						}
+					},
+					"triggers": {
+						"Recurrence": {
+							"recurrence": {
+								"frequency": "Hour",
+								"interval": 3
+							},
+							"evaluatedRecurrence": {
+								"frequency": "Hour",
+								"interval": 3
+							},
+							"type": "Recurrence"
+						}
+					},
+					"actions": {
+						"Query_the_Azure_Resource_Graph": {
+							"runAfter": {
+								"Initialize_variable_-_query": [
+									"Succeeded"
+								]
+							},
+							"type": "Http",
+							"inputs": {
+								"uri": "https://management.azure.com/providers/Microsoft.ResourceGraph/resources?api-version=2021-03-01",
+								"method": "POST",
+								"body": {
+									"query": "@{variables('query')}"
+								},
+								"authentication": {
+									"type": "ManagedServiceIdentity"
+								}
+							}
+						},
+						"Initialize_variable_-_query": {
+							"runAfter": {
+								"Initialize_variable_-_lastRunTime": [
+									"Succeeded"
+								]
+							},
+							"type": "InitializeVariable",
+							"inputs": {
+								"variables": [
+									{
+										"name": "query",
+										"type": "string",
+										"value": "resources| where type =~ 'microsoft.hybridcompute/machines'| extend computerName = properties.osProfile.computerName, lastStatusChange = properties.lastStatusChange, status = properties.status, os = properties.osType, cloudprovider = properties.detectedProperties.cloudprovider, machineFqdn = properties.machineFqdn, hostName = properties.hostName, dnsFqdn = properties.dnsFqdn, osSku = properties.osSku, errorDetails = properties.errorDetails, extensionServiceStatus = properties.serviceStatuses.extensionService.status, guestConfigurationServiceStatus = properties.serviceStatuses.guestConfigurationService.status, agentVersion = properties.agentVersion| extend awsInstanceId = properties['detectedProperties']['AWS-instanceId']| extend awsAccountId = properties['detectedProperties']['AWS-accountId']| extend gcpinstanceId = properties['detectedProperties']['GCP-instanceId']| extend gcpProject = properties['detectedProperties']['GCP-projectNumber']| where lastStatusChange >=  datetime(\"@{variables('lastRunTime')}\") | where status == 'Disconnected' or extensionServiceStatus !in ('active', 'running')  or guestConfigurationServiceStatus !in ('active', 'running')| project hostName, machineFqdn, dnsFqdn, agentVersion, cloudprovider, subscriptionId, resourceGroup, status, lastStatusChange, os, osSku, extensionServiceStatus, guestConfigurationServiceStatus, errorDetails, awsInstanceId, awsAccountId, gcpinstanceId, gcpProject"
+									}
+								]
+							}
+						},
+						"Initialize_variable_-_lastRunTime": {
+							"runAfter": {
+								"Get_last_runtime": [
+									"Succeeded"
+								]
+							},
+							"type": "InitializeVariable",
+							"inputs": {
+								"variables": [
+									{
+										"name": "lastRunTime",
+										"type": "string",
+										"value": "@{body('Get_last_runtime')?['value'][0]?['properties']?['endTime']}"
+									}
+								]
+							}
+						},
+						"Get_last_runtime": {
+							"runAfter": {},
+							"type": "Http",
+							"inputs": {
+								"uri": "https://management.azure.com@{workflow().id}/runs",
+								"method": "GET",
+								"queries": {
+									"$top": "1",
+									"$filter": "Status eq 'Succeeded'",
+									"api-version": "2016-06-01"
+								},
+								"authentication": {
+									"type": "ManagedServiceIdentity"
+								}
+							},
+							"runtimeConfiguration": {
+								"contentTransfer": {
+									"transferMode": "Chunked"
+								}
+							}
+						},
+						"Condition": {
+							"actions": {
+								"Parse_JSON": {
+									"type": "ParseJson",
+									"inputs": {
+										"content": "@body('Query_the_Azure_Resource_Graph')",
+										"schema": {
+											"type": "object",
+											"properties": {
+												"totalRecords": {
+													"type": "integer"
+												},
+												"count": {
+													"type": "integer"
+												},
+												"data": {
+													"type": "array",
+													"items": {
+														"type": "object",
+														"properties": {
+															"hostName": {},
+															"machineFqdn": {
+																"type": "string"
+															},
+															"dnsFqdn": {
+																"type": "string"
+															},
+															"agentVersion": {
+																"type": "string"
+															},
+															"cloudprovider": {
+																"type": "string"
+															},
+															"subscriptionId": {
+																"type": "string"
+															},
+															"resourceGroup": {
+																"type": "string"
+															},
+															"status": {
+																"type": "string"
+															},
+															"lastStatusChange": {
+																"type": "string"
+															},
+															"os": {
+																"type": "string"
+															},
+															"osSku": {
+																"type": "string"
+															},
+															"extensionServiceStatus": {
+																"type": "string"
+															},
+															"guestConfigurationServiceStatus": {
+																"type": "string"
+															},
+															"errorDetails": {
+																"type": "array"
+															},
+															"awsInstanceId": {},
+															"awsAccountId": {},
+															"gcpinstanceId": {},
+															"gcpProject": {}
+														},
+														"required": [
+															"hostName",
+															"machineFqdn",
+															"dnsFqdn",
+															"agentVersion",
+															"cloudprovider",
+															"subscriptionId",
+															"resourceGroup",
+															"status",
+															"lastStatusChange",
+															"os",
+															"osSku",
+															"extensionServiceStatus",
+															"guestConfigurationServiceStatus",
+															"errorDetails",
+															"awsInstanceId",
+															"awsAccountId",
+															"gcpinstanceId",
+															"gcpProject"
+														]
+													}
+												},
+												"facets": {
+													"type": "array"
+												},
+												"resultTruncated": {
+													"type": "string"
+												}
+											}
+										}
+									}
+								},
+								"Create_CSV_table": {
+									"runAfter": {
+										"Parse_JSON": [
+											"Succeeded"
+										]
+									},
+									"trackedProperties": {},
+									"type": "Table",
+									"inputs": {
+										"from": "@body('Parse_JSON')?['data']",
+										"format": "CSV"
+									}
+								}
+							},
+							"runAfter": {
+								"Query_the_Azure_Resource_Graph": [
+									"Succeeded"
+								]
+							},
+							"else": {
+								"actions": {}
+							},
+							"expression": {
+								"and": [
+									{
+										"greater": [
+											"@body('Query_the_Azure_Resource_Graph')?['totalRecords']",
+											0
+										]
+									}
+								]
+							},
+							"type": "If"
+						}
+					},
+					"outputs": {}
+				},
+				"parameters": {
+					"$connections": {
+						"value": {}
+					}
+				}
+			},
+			"name": "[parameters('PlaybookName')]",
+			"type": "Microsoft.Logic/workflows",
+			"location": "[resourceGroup().location]",
+			"tags": {
+				"hidden-SentinelTemplateName": "arc-disonnectedMachines",
+				"hidden-SentinelTemplateVersion": "1.0"
+			},
+			"identity": {
+				"type": "SystemAssigned"
+			},
+			"apiVersion": "2017-07-01",
+			"dependsOn": []
+		}
+	]
+}
