@@ -23,3 +23,5 @@ You can deploy the main template by clicking on the button below:
 
 1. After you have deployed the logic app assign the system managed identity the following roles
     - Reader
+      
+2. Authorize the Office365 API Connection for the logic app
