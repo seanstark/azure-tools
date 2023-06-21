@@ -24,7 +24,9 @@
 			"type": "string"
 		}
 	},
-	"variables": {},
+	"variables": {
+		"Office365ConnectionName": "[concat('Office365-', parameters('PlaybookName'))]"
+	},
 	"resources": [
 		{
 			"properties": {
@@ -53,122 +55,61 @@
 						}
 					},
 					"actions": {
-						"Query_the_Azure_Resource_Graph": {
-							"runAfter": {
-								"Initialize_variable_-_query": [
-									"Succeeded"
-								]
-							},
-							"type": "Http",
-							"inputs": {
-								"uri": "https://management.azure.com/providers/Microsoft.ResourceGraph/resources?api-version=2021-03-01",
-								"method": "POST",
-								"body": {
-									"query": "@{variables('query')}"
-								},
-								"authentication": {
-									"type": "ManagedServiceIdentity"
-								}
-							}
-						},
-						"Initialize_variable_-_query": {
-							"runAfter": {
-								"Initialize_variable_-_lastRunTime": [
-									"Succeeded"
-								]
-							},
-							"type": "InitializeVariable",
-							"inputs": {
-								"variables": [
-									{
-										"name": "query",
-										"type": "string",
-										"value": "resources| where type =~ 'microsoft.hybridcompute/machines'| extend computerName = properties.osProfile.computerName, lastStatusChange = properties.lastStatusChange, status = properties.status, os = properties.osType, cloudprovider = properties.detectedProperties.cloudprovider, machineFqdn = properties.machineFqdn, hostName = properties.hostName, dnsFqdn = properties.dnsFqdn, osSku = properties.osSku, errorDetails = properties.errorDetails, extensionServiceStatus = properties.serviceStatuses.extensionService.status, guestConfigurationServiceStatus = properties.serviceStatuses.guestConfigurationService.status, agentVersion = properties.agentVersion| extend awsInstanceId = properties['detectedProperties']['AWS-instanceId']| extend awsAccountId = properties['detectedProperties']['AWS-accountId']| extend gcpinstanceId = properties['detectedProperties']['GCP-instanceId']| extend gcpProject = properties['detectedProperties']['GCP-projectNumber']| where lastStatusChange >=  datetime(\"@{variables('lastRunTime')}\") | where status == 'Disconnected' or extensionServiceStatus !in ('active', 'running')  or guestConfigurationServiceStatus !in ('active', 'running')| project hostName, machineFqdn, dnsFqdn, agentVersion, cloudprovider, subscriptionId, resourceGroup, status, lastStatusChange, os, osSku, extensionServiceStatus, guestConfigurationServiceStatus, errorDetails, awsInstanceId, awsAccountId, gcpinstanceId, gcpProject"
-									}
-								]
-							}
-						},
-						"Initialize_variable_-_lastRunTime": {
-							"runAfter": {
-								"Get_last_runtime": [
-									"Succeeded"
-								]
-							},
-							"type": "InitializeVariable",
-							"inputs": {
-								"variables": [
-									{
-										"name": "lastRunTime",
-										"type": "string",
-										"value": "@{body('Get_last_runtime')?['value'][0]?['properties']?['endTime']}"
-									}
-								]
-							}
-						},
-						"Get_last_runtime": {
-							"runAfter": {},
-							"type": "Http",
-							"inputs": {
-								"uri": "https://management.azure.com@{workflow().id}/runs",
-								"method": "GET",
-								"queries": {
-									"$top": "1",
-									"$filter": "Status eq 'Succeeded'",
-									"api-version": "2016-06-01"
-								},
-								"authentication": {
-									"type": "ManagedServiceIdentity"
-								}
-							},
-							"runtimeConfiguration": {
-								"contentTransfer": {
-									"transferMode": "Chunked"
-								}
-							}
-						},
 						"Condition": {
 							"actions": {
+								"Create_CSV_table": {
+									"runAfter": {
+										"Parse_JSON": [
+											"Succeeded"
+										]
+									},
+									"trackedProperties": {},
+									"type": "Table",
+									"inputs": {
+										"format": "CSV",
+										"from": "@body('Parse_JSON')?['data']"
+									}
+								},
 								"Parse_JSON": {
+									"runAfter": {},
 									"type": "ParseJson",
 									"inputs": {
 										"content": "@body('Query_the_Azure_Resource_Graph')",
 										"schema": {
-											"type": "object",
 											"properties": {
-												"totalRecords": {
-													"type": "integer"
-												},
 												"count": {
 													"type": "integer"
 												},
 												"data": {
-													"type": "array",
 													"items": {
-														"type": "object",
 														"properties": {
-															"hostName": {},
-															"machineFqdn": {
+															"agentVersion": {
+																"type": "string"
+															},
+															"awsAccountId": {},
+															"awsInstanceId": {},
+															"cloudprovider": {
 																"type": "string"
 															},
 															"dnsFqdn": {
 																"type": "string"
 															},
-															"agentVersion": {
+															"errorDetails": {
+																"type": "array"
+															},
+															"extensionServiceStatus": {
 																"type": "string"
 															},
-															"cloudprovider": {
+															"gcpProject": {},
+															"gcpinstanceId": {},
+															"guestConfigurationServiceStatus": {
 																"type": "string"
 															},
-															"subscriptionId": {
-																"type": "string"
-															},
-															"resourceGroup": {
-																"type": "string"
-															},
-															"status": {
-																"type": "string"
-															},
+															"hostName": {},
 															"lastStatusChange": {
+																"type": "string"
+															},
+															"machineFqdn": {
 																"type": "string"
 															},
 															"os": {
@@ -177,19 +118,15 @@
 															"osSku": {
 																"type": "string"
 															},
-															"extensionServiceStatus": {
+															"resourceGroup": {
 																"type": "string"
 															},
-															"guestConfigurationServiceStatus": {
+															"status": {
 																"type": "string"
 															},
-															"errorDetails": {
-																"type": "array"
-															},
-															"awsInstanceId": {},
-															"awsAccountId": {},
-															"gcpinstanceId": {},
-															"gcpProject": {}
+															"subscriptionId": {
+																"type": "string"
+															}
 														},
 														"required": [
 															"hostName",
@@ -210,30 +147,52 @@
 															"awsAccountId",
 															"gcpinstanceId",
 															"gcpProject"
-														]
-													}
+														],
+														"type": "object"
+													},
+													"type": "array"
 												},
 												"facets": {
 													"type": "array"
 												},
 												"resultTruncated": {
 													"type": "string"
+												},
+												"totalRecords": {
+													"type": "integer"
 												}
-											}
+											},
+											"type": "object"
 										}
 									}
 								},
-								"Create_CSV_table": {
+								"Send_an_email_(V2)": {
 									"runAfter": {
-										"Parse_JSON": [
+										"Create_CSV_table": [
 											"Succeeded"
 										]
 									},
-									"trackedProperties": {},
-									"type": "Table",
+									"type": "ApiConnection",
 									"inputs": {
-										"from": "@body('Parse_JSON')?['data']",
-										"format": "CSV"
+										"body": {
+											"Attachments": [
+												{
+													"ContentBytes": "@{base64(body('Create_CSV_table'))}",
+													"Name": "Unhealthy Arc Machines.csv"
+												}
+											],
+											"Body": "<p>The attached csv file contains Azure Arc machines that are currently unhealthy.<br>\n<br>\nPlease refer to Troubleshoot Azure Connected Machine agent connection issues - Azure Arc | Microsoft Learn and resolve any issues</p>",
+											"Importance": "Normal",
+											"Subject": "Unhealthy Arc Machines Report",
+											"To": "update@domainxay.com"
+										},
+										"host": {
+											"connection": {
+												"name": "@parameters('$connections')['office365']['connectionId']"
+											}
+										},
+										"method": "post",
+										"path": "/v2/Mail"
 									}
 								}
 							},
@@ -241,9 +200,6 @@
 								"Query_the_Azure_Resource_Graph": [
 									"Succeeded"
 								]
-							},
-							"else": {
-								"actions": {}
 							},
 							"expression": {
 								"and": [
@@ -256,13 +212,92 @@
 								]
 							},
 							"type": "If"
+						},
+						"Get_last_runtime": {
+							"runAfter": {},
+							"type": "Http",
+							"inputs": {
+								"authentication": {
+									"type": "ManagedServiceIdentity"
+								},
+								"method": "GET",
+								"queries": {
+									"$filter": "Status eq 'Succeeded'",
+									"$top": "1",
+									"api-version": "2016-06-01"
+								},
+								"uri": "https://management.azure.com@{workflow().id}/runs"
+							},
+							"runtimeConfiguration": {
+								"contentTransfer": {
+									"transferMode": "Chunked"
+								}
+							}
+						},
+						"Initialize_variable_-_lastRunTime": {
+							"runAfter": {
+								"Get_last_runtime": [
+									"Succeeded"
+								]
+							},
+							"type": "InitializeVariable",
+							"inputs": {
+								"variables": [
+									{
+										"name": "lastRunTime",
+										"type": "string",
+										"value": "@{body('Get_last_runtime')?['value'][0]?['properties']?['endTime']}"
+									}
+								]
+							}
+						},
+						"Initialize_variable_-_query": {
+							"runAfter": {
+								"Initialize_variable_-_lastRunTime": [
+									"Succeeded"
+								]
+							},
+							"type": "InitializeVariable",
+							"inputs": {
+								"variables": [
+									{
+										"name": "query",
+										"type": "string",
+										"value": "resources| where type =~ 'microsoft.hybridcompute/machines'| extend computerName = properties.osProfile.computerName, lastStatusChange = properties.lastStatusChange, status = properties.status, os = properties.osType, cloudprovider = properties.detectedProperties.cloudprovider, machineFqdn = properties.machineFqdn, hostName = properties.hostName, dnsFqdn = properties.dnsFqdn, osSku = properties.osSku, errorDetails = properties.errorDetails, extensionServiceStatus = properties.serviceStatuses.extensionService.status, guestConfigurationServiceStatus = properties.serviceStatuses.guestConfigurationService.status, agentVersion = properties.agentVersion| extend awsInstanceId = properties['detectedProperties']['AWS-instanceId']| extend awsAccountId = properties['detectedProperties']['AWS-accountId']| extend gcpinstanceId = properties['detectedProperties']['GCP-instanceId']| extend gcpProject = properties['detectedProperties']['GCP-projectNumber']| where lastStatusChange >=  datetime(\"@{variables('lastRunTime')}\") | where status == 'Disconnected' or extensionServiceStatus !in ('active', 'running')  or guestConfigurationServiceStatus !in ('active', 'running')| project hostName, machineFqdn, dnsFqdn, agentVersion, cloudprovider, subscriptionId, resourceGroup, status, lastStatusChange, os, osSku, extensionServiceStatus, guestConfigurationServiceStatus, errorDetails, awsInstanceId, awsAccountId, gcpinstanceId, gcpProject"
+									}
+								]
+							}
+						},
+						"Query_the_Azure_Resource_Graph": {
+							"runAfter": {
+								"Initialize_variable_-_query": [
+									"Succeeded"
+								]
+							},
+							"type": "Http",
+							"inputs": {
+								"authentication": {
+									"type": "ManagedServiceIdentity"
+								},
+								"body": {
+									"query": "@{variables('query')}"
+								},
+								"method": "POST",
+								"uri": "https://management.azure.com/providers/Microsoft.ResourceGraph/resources?api-version=2021-03-01"
+							}
 						}
 					},
 					"outputs": {}
 				},
 				"parameters": {
 					"$connections": {
-						"value": {}
+						"value": {
+							"office365": {
+								"connectionId": "[resourceId('Microsoft.Web/connections', variables('Office365ConnectionName'))]",
+								"connectionName": "[variables('Office365ConnectionName')]",
+								"id": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Web/locations/', resourceGroup().location, '/managedApis/Office365')]"
+							}
+						}
 					}
 				}
 			},
@@ -270,14 +305,30 @@
 			"type": "Microsoft.Logic/workflows",
 			"location": "[resourceGroup().location]",
 			"tags": {
-				"hidden-SentinelTemplateName": "arc-disonnectedMachines",
+				"hidden-SentinelTemplateName": "arc-unhealthymachines",
 				"hidden-SentinelTemplateVersion": "1.0"
 			},
 			"identity": {
 				"type": "SystemAssigned"
 			},
 			"apiVersion": "2017-07-01",
-			"dependsOn": []
+			"dependsOn": [
+				"[resourceId('Microsoft.Web/connections', variables('Office365ConnectionName'))]"
+			]
+		},
+		{
+			"type": "Microsoft.Web/connections",
+			"apiVersion": "2016-06-01",
+			"name": "[variables('Office365ConnectionName')]",
+			"location": "[resourceGroup().location]",
+			"kind": "V1",
+			"properties": {
+				"displayName": "[variables('Office365ConnectionName')]",
+				"customParameterValues": {},
+				"api": {
+					"id": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Web/locations/', resourceGroup().location, '/managedApis/Office365')]"
+				}
+			}
 		}
 	]
 }
