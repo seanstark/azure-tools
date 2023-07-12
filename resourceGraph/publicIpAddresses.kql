@@ -1,0 +1,11 @@
+resources
+| where type =~ "microsoft.network/publicipaddresses"
+| extend skuName = coalesce(sku.name, '-')
+| extend skuTier = coalesce(sku.tier, '-')
+| extend dnsName = coalesce(properties.dnsSettings.fqdn, '-')
+| extend ipAddress = coalesce(properties.ipAddress, '-')
+| extend associatedTo = coalesce(trim_end('/', substring(properties.ipConfiguration.id, 0, indexof(properties.ipConfiguration.id,  split(properties.ipConfiguration.id, '/')[-2]))), properties.natGateway.id, '-')
+| extend allocationMethod = tostring(properties.publicIPAllocationMethod)
+| extend idleTimeoutInMinutes = coalesce(properties.idleTimeoutInMinutes, '-')
+| extend zones = case(tostring(sku.name) =~ 'Basic', 'Not applicable', coalesce(strcat_array(zones, ','), 'None'))
+| project id, location, ipAddress, dnsName, associatedTo, allocationMethod, skuName, subscriptionId, resourceGroup, zones, idleTimeoutInMinutes
