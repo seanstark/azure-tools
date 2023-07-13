@@ -1,0 +1,5 @@
+Resources
+| where type contains 'microsoft.network/Networksecuritygroups'
+| extend subnets = properties.subnets, networkInterfaces = properties.networkInterfaces, securityRules = properties.securityRules
+| mv-expand securityRules
+| extend ruleName = securityRules.id, provisioningState = securityRules.properties.provisioningState, destinationAddressPrefixes = securityRules.properties.destinationAddressPrefixes, destinationAddressPrefix = securityRules.properties.destinationAddressPrefix, sourceAddressPrefixes = securityRules.properties.sourceAddressPrefixes, destinationPortRanges = securityRules.properties.destinationPortRanges, sourceAddressPrefix = securityRules.properties.sourceAddressPrefix, destinationPortRange = securityRules.properties.destinationPortRange, sourcePortRanges = securityRules.properties.sourcePortRanges, sourcePortRange = securityRules.properties.sourcePortRange, description = securityRules.properties.description, protocol = securityRules.properties.protocol, direction = securityRules.properties.direction, priority = securityRules.properties.priority, access = securityRules.properties.access
