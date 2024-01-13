@@ -1,0 +1,20 @@
+resources
+| where type =~ 'Microsoft.Compute/virtualMachines'
+| project id = tolower(tostring(id)), name, type, tenantId, location, resourceGroup, subscriptionId
+| join kind=inner  (
+    resourcecontainers
+    | where type == 'microsoft.resources/subscriptions'
+    | extend managementGroupDisplayName = properties.managementGroupAncestorsChain[0].displayName
+    | project subscriptionId, managementGroupDisplayName
+    ) on subscriptionId
+| project-away subscriptionId1
+| join kind=innerunique (
+resources
+    | where type == "microsoft.compute/virtualmachines/extensions"
+    | where name in ('MDE.Linux', 'MDE.Windows')
+    | extend machineResourceId = properties.settings.azureResourceId
+    | extend mdeExtension = properties.type
+    | extend mdeExtensionProvisioningState = properties.provisioningState
+    | project id = tolower(tostring(machineResourceId)), mdeExtension, mdeExtensionProvisioningState
+    ) on id
+| project-away id1
