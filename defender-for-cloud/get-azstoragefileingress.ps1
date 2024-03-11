@@ -50,8 +50,8 @@ ForEach ($subscription in $subscriptions){
         $fileIngress.Data.Total | % {$totalBlobIngress += $_}
     
         $totalFileIngress30dayBytes = $totalBlobIngress
-        $totalFileIngress30dayMB = [math]::round([decimal]$totalBlobIngress/1000/1000,6)
-        $totalFileIngress30dayGB = [math]::round([decimal]$totalBlobIngress/1000/1000/1000,6)
+        $totalFileIngress30dayMB = [math]::round([decimal]$totalFileIngress/1000/1000,6)
+        $totalFileIngress30dayGB = [math]::round([decimal]$totalFileIngress/1000/1000/1000,6)
 
         Write-Host ('    {0} totalFileIngress30dayBytes: {1}, totalFileIngress30dayMB:{2} totalFileIngress30dayGB: {3}' -f $storageAccount.StorageAccountName,  $totalFileIngress30dayBytes, $totalFileIngress30dayMB, $totalFileIngress30dayGB) -ForegroundColor Yellow
 
