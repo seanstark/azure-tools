@@ -47,9 +47,9 @@ ForEach ($subscription in $subscriptions){
         $fileIngress = Get-AzMetric -ResourceId $($storageAccount.id + "/fileservices/default") -MetricName Ingress -AggregationType Total -StartTime $((Get-Date).AddMonths(-1)) -EndTime $(Get-Date) -TimeGrain 00:05:00 -WarningAction SilentlyContinue
 
         # Get Total ingress bytes over the past 30 days
-        $fileIngress.Data.Total | % {$totalBlobIngress += $_}
+        $fileIngress.Data.Total | % {$totalFileIngress += $_}
     
-        $totalFileIngress30dayBytes = $totalBlobIngress
+        $totalFileIngress30dayBytes = $totalFileIngress
         $totalFileIngress30dayMB = [math]::round([decimal]$totalFileIngress/1000/1000,6)
         $totalFileIngress30dayGB = [math]::round([decimal]$totalFileIngress/1000/1000/1000,6)
 
