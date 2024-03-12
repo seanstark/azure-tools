@@ -1,0 +1,30 @@
+"StorageAccountName","SubscriptionTenantId","Subscription","SubscriptionId","ResourceGroupName","totalFileIngress30dayBytes","totalFileIngress30dayMB","totalFileIngress30dayGB","totalBlobIngress30dayBytes","totalBlobIngress30dayMB","totalBlobIngress30dayGB"
+"cs41003200153e4d877","869d26a0-a8cb-4068-aba6-c3284b615873","Azure subscription 1","98aa6bab-0ef8-48e2-8397-a0101e0712e3","cloud-shell-storage-westus","0","0","0","472908","0.472908","0.000473"
+"cs4100320016412ae8c","869d26a0-a8cb-4068-aba6-c3284b615873","Microsoft Azure Sponsorship 2","ada06e68-375e-4210-be3a-c6cacebf41c5","cloud-shell-storage-westus","1763420","1.76342","0.001763","500036","0.500036","0.000500"
+"cs410032001cc47cd61","869d26a0-a8cb-4068-aba6-c3284b615873","Microsoft Azure Sponsorship 2","ada06e68-375e-4210-be3a-c6cacebf41c5","cloud-shell-storage-westus","0","0","0","440325","0.440325","0.000440"
+"nsgflowlogswu2","869d26a0-a8cb-4068-aba6-c3284b615873","Microsoft Azure Sponsorship 2","ada06e68-375e-4210-be3a-c6cacebf41c5","networkWatcherRG","0","0","0","185948","0.185948","0.000186"
+"oktasso5kl4kqkouf3y6","869d26a0-a8cb-4068-aba6-c3284b615873","Microsoft Azure Sponsorship 2","ada06e68-375e-4210-be3a-c6cacebf41c5","okta-function","60720339","60.720339","0.060720","268336077","268.336077","0.268336"
+"oktassoisrnfjsjdxatw","869d26a0-a8cb-4068-aba6-c3284b615873","Microsoft Azure Sponsorship 2","ada06e68-375e-4210-be3a-c6cacebf41c5","sentinel-prd","0","0","0","311569","0.311569","0.000312"
+"pbi232434","869d26a0-a8cb-4068-aba6-c3284b615873","Microsoft Azure Sponsorship 2","ada06e68-375e-4210-be3a-c6cacebf41c5","powerbi-gateway","0","0","0","167417","0.167417","0.000167"
+"sentinelprd3281009789","869d26a0-a8cb-4068-aba6-c3284b615873","Microsoft Azure Sponsorship 2","ada06e68-375e-4210-be3a-c6cacebf41c5","sentinel-prd","0","0","0","426811","0.426811","0.000427"
+"starkentstorage","869d26a0-a8cb-4068-aba6-c3284b615873","Microsoft Azure Sponsorship 2","ada06e68-375e-4210-be3a-c6cacebf41c5","stark-enterprises","0","0","0","145958","0.145958","0.000146"
+"vmappsstar","869d26a0-a8cb-4068-aba6-c3284b615873","Microsoft Azure Sponsorship 2","ada06e68-375e-4210-be3a-c6cacebf41c5","az-compute-gallery","0","0","0","154923","0.154923","0.000155"
+"vnetflowlogswu2","869d26a0-a8cb-4068-aba6-c3284b615873","Microsoft Azure Sponsorship 2","ada06e68-375e-4210-be3a-c6cacebf41c5","core-networking","0","0","0","6204676286","6204.676286","6.204676"
+"d4storage","869d26a0-a8cb-4068-aba6-c3284b615873","Microsoft Azure Sponsorship 2","ada06e68-375e-4210-be3a-c6cacebf41c5","defender-for-storage","0","0","0","349257","0.349257","0.000349"
+"fimexportindex","869d26a0-a8cb-4068-aba6-c3284b615873","Microsoft Azure Sponsorship 2","ada06e68-375e-4210-be3a-c6cacebf41c5","paypal-fim","0","0","0","161115","0.161115","0.000161"
+"fimlogicappindex","869d26a0-a8cb-4068-aba6-c3284b615873","Microsoft Azure Sponsorship 2","ada06e68-375e-4210-be3a-c6cacebf41c5","fim-export-to-eventhub","0","0","0","162316","0.162316","0.000162"
+"nsgflowlogswu3","869d26a0-a8cb-4068-aba6-c3284b615873","Microsoft Azure Sponsorship 2","ada06e68-375e-4210-be3a-c6cacebf41c5","networkWatcherRG","0","0","0","10887092","10.887092","0.010887"
+"policydemoenforcedisable","869d26a0-a8cb-4068-aba6-c3284b615873","Microsoft Azure Sponsorship 2","ada06e68-375e-4210-be3a-c6cacebf41c5","policy-demo-enforcement-disabled","0","0","0","163248","0.163248","0.000163"
+"policydemoenforceenabled","869d26a0-a8cb-4068-aba6-c3284b615873","Microsoft Azure Sponsorship 2","ada06e68-375e-4210-be3a-c6cacebf41c5","policy-demo-enforcement-enabled","0","0","0","164278","0.164278","0.000164"
+"policydenyenforcedisable","869d26a0-a8cb-4068-aba6-c3284b615873","Microsoft Azure Sponsorship 2","ada06e68-375e-4210-be3a-c6cacebf41c5","policy-demo-deny-enforcement-disabled","0","0","0","167297","0.167297","0.000167"
+"policydenyenforceenabled","869d26a0-a8cb-4068-aba6-c3284b615873","Microsoft Azure Sponsorship 2","ada06e68-375e-4210-be3a-c6cacebf41c5","policy-demo-deny-enforcement-enabled","0","0","0","146162","0.146162","0.000146"
+"","",,,,,,,,,
+"Total Category","Total Value",,,,,,,,,
+"numberOfSubscriptions","2",,,,,,,,,
+"numberOfStorageAccounts","19",,,,,,,,,
+"allAccountsTotalFileIngress30dayMB","62.483759000000006",,,,,,,,,
+"allAccountsTotalFileIngress30dayGB","0.062483000000000004",,,,,,,,,
+"allAccountsTotalFileIngress30dayBytes","62483759",,,,,,,,,
+"allAccountsTotalBlobIngress30dayMB","6488.019023",,,,,,,,,
+"allAccountsTotalBlobIngress30dayGB","6.488017000000001",,,,,,,,,
+"allAccountsTotalBlobIngress30dayBytes","6488019023",,,,,,,,,
