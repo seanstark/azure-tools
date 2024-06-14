@@ -1,0 +1,11 @@
+resources 
+| extend planTypes = tolower('microsoft.compute/virtualmachinescalesets') 
+| extend type = tolower(type) 
+| where planTypes has type 
+| extend extensions = tostring(properties.virtualMachineProfile.extensionProfile)
+| where extensions !contains 'Compute.AKS'
+| where  sku != "" and sku.capacity != "" and sku.capacity > 0
+| extend vmcount = toint(sku.capacity)
+| extend resourceType = 'Virtual Machine Scale Set'
+| extend productName = 'Defender for Servers'
+| summarize count = sum(vmcount) by subscriptionId, resourceGroup, productName, resourceType
