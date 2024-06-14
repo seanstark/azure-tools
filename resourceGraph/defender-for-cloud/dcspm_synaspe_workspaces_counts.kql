@@ -1,0 +1,8 @@
+resources
+| extend planTypes = tolower('microsoft.synapse/workspaces')
+| extend type = tolower(type)
+| where planTypes has type
+| where tolower(sku.tier) !contains 'basic'
+| extend resourceType = 'Synapse Workspace'
+| extend productName = 'Defender CSPM'
+| summarize count = count() by subscriptionId, resourceGroup, productName, resourceType
