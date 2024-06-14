@@ -1,0 +1,31 @@
+securityresources
+| where type =~ 'microsoft.security/pricings'
+| extend planName = name
+| extend freeTrialRemainingTime = properties.freeTrialRemainingTime
+| extend resourcesCoverageStatus = tostring(properties.resourcesCoverageStatus)
+| extend isEnabled = case (
+    tostring(properties.pricingTier) == 'Standard', 'Enabled',
+    'Disabled'
+)
+| extend isPlanDeprecated = case (
+    properties.deprecated != true, 'false',
+    tostring(properties.deprecated)
+)
+| extend subPlan = case(
+        isnotempty(properties.subPlan), tostring(properties.subPlan),
+        'n/a'
+    )
+| extend isSubPlanDeprecated = case (
+    subPlan in ('PerApiCall','PerTransaction','DefenderForStorageV2'), 'true',
+    'false'
+)
+| extend planSet = tolower(strcat(planName, '-', subPlan))
+| extend extensions = tostring(properties.extensions)
+| extend keyFeatureExtensions = replace('"name":"MdeDesignatedSubscription","isEnabled":"False"},', '',extensions)
+| extend keyFeatuesDisabled = case(
+    planSet in ('virtualmachines-p2','containers-n/a','cloudposture-n/a','storageaccounts-defenderforstoragev2', 'storageaccounts-perstorageaccount') 
+    and isEnabled == 'Enabled'
+    and keyFeatureExtensions contains "False", 'True',
+    'False'
+)
+| project subscriptionId, planName, planSet, freeTrialRemainingTime, resourcesCoverageStatus, isEnabled, isPlanDeprecated, subPlan, isSubPlanDeprecated, keyFeatuesDisabled, keyFeatureExtensions, extensions, properties
