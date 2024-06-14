@@ -1,0 +1,7 @@
+ResourceContainers  
+| where type =~ 'microsoft.resources/subscriptions' 
+| where properties.state == 'Enabled' 
+| extend resourceType = 'Subscription' 
+| extend resouceGroup = '' 
+| extend productName = 'Defender for Resource Manager' 
+| summarize count = count() by subscriptionId, resouceGroup, productName, resourceType
