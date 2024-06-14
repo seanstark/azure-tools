@@ -1,0 +1,9 @@
+Resources
+ | where type == 'microsoft.containerservice/managedclusters'
+ | extend pool = (properties.agentPoolProfiles)
+ | mv-expand pool
+ | extend cpuCores = toint(extract_all(@'(\d+)', tostring(split(pool.vmSize, '_')[1]))[0]) * pool.['count']
+ | project subscriptionId, resourceGroup, cluster = name, size = pool.vmSize, cpuCores, poolcount = pool.['count']
+ | extend resourceType = 'AKS vCores'
+ | extend productName = 'Defender for Containers'
+ | summarize count = sum(cpuCores) by subscriptionId, resourceGroup, productName, resourceType
