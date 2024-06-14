@@ -1,0 +1,7 @@
+resources
+| extend planTypes = tolower('microsoft.apimanagement/service')
+| extend type = tolower(type)
+| where planTypes has type
+| extend resourceType = 'Azure API Management'
+| extend productName = 'Defender for APIs'
+| summarize count = count() by subscriptionId, resourceGroup, productName, resourceType
