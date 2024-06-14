@@ -1,0 +1,24 @@
+securityresources
+| where type =~ 'microsoft.security/pricings'
+| extend planName = name
+| extend freeTrialRemainingTime = properties.freeTrialRemainingTime
+| extend resourcesCoverageStatus = tostring(properties.resourcesCoverageStatus)
+| extend isEnabled = case (
+    tostring(properties.pricingTier) == 'Standard', 'Enabled',
+    'Disabled'
+)
+| extend isPlanDeprecated = case (
+    properties.deprecated != true, 'false',
+    tostring(properties.deprecated)
+)
+| extend subPlan = case(
+        isnotempty(properties.subPlan), tostring(properties.subPlan),
+        'n/a'
+    )
+| extend isSubPlanDeprecated = case (
+    subPlan in ('PerApiCall','PerTransaction','DefenderForStorageV2'), 'true',
+    'false'
+)
+| extend planSet = tolower(strcat(planName, '-', subPlan))
+| extend extensions = properties.extensions
+| project subscriptionId, planName, planSet, freeTrialRemainingTime, resourcesCoverageStatus, isEnabled, isPlanDeprecated, subPlan, isSubPlanDeprecated, extensions, properties
