@@ -1,0 +1,7 @@
+resources
+| where type == 'microsoft.web/serverfarms'
+| where isnotempty(sku) and tolower(sku.tier) != 'consumption' and toint(properties.numberOfWorkers) > 0
+| extend resourceType = 'App Service'
+| extend appServiceCount = toint(properties.numberOfWorkers)
+| extend productName = 'Defender for App Service'
+| summarize count = sum(appServiceCount) by subscriptionId, resourceGroup, productName, resourceType
