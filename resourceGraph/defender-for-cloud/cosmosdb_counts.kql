@@ -1,0 +1,8 @@
+resources
+| extend planTypes = tolower('microsoft.documentdb/databaseaccounts')
+| extend type = tolower(type)
+| where planTypes has type
+| where tolower(sku.tier) !contains 'basic'
+| extend resourceType = 'CosmosDB Server'
+| extend productName = 'Defender for Azure Cosomos DB'
+| summarize count = count() by subscriptionId, resourceGroup, productName, resourceType
