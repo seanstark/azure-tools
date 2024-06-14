@@ -1,0 +1,14 @@
+resources 
+| extend planTypes = tolower('microsoft.compute/virtualmachines, microsoft.hybridcompute/machines, microsoft.classiccompute/virtualmachines')
+| extend type = tolower(type)
+| extend resourceType = case(
+    type == 'microsoft.compute/virtualmachines', 'Virtual Machine',
+    type == 'microsoft.classiccompute/virtualmachines', 'Virtual Machine',
+    type == 'microsoft.hybridcompute/virtualmachines', 'Azure Arc Server', 'Virtual Machine'
+)
+| where planTypes has type 
+| extend powerState = properties.extended.instanceView.powerState.displayStatus 
+| where tostring(properties.extended.instanceView.powerState.displayStatus) !contains 'deallocated' 
+| where properties.status !in ('Expired','Disconnected')
+| extend productName = 'Defender for Servers'
+| summarize count = count() by subscriptionId, resourceGroup, productName, resourceType
