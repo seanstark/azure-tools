@@ -1,0 +1,9 @@
+resources
+| extend planTypes = tolower('microsoft.storage/storageaccounts')
+| extend type = tolower(type)
+| where planTypes has type
+| extend endpoints = properties.primaryEndpoints
+| where isnotempty(properties.primaryEndpoints.blob) or isnotempty(properties.primaryEndpoints.file)
+| extend resourceType = 'Storage Account'
+| extend productName = 'Defender CSPM'
+| summarize count = count() by subscriptionId, resourceGroup, productName, resourceType
