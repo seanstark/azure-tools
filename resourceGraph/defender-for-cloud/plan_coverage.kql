@@ -13,12 +13,12 @@ securityresources
 )
 | extend subPlan = case(
         isnotempty(properties.subPlan), tostring(properties.subPlan),
-        'n/a'
+        'base'
     )
 | extend isSubPlanDeprecated = case (
     subPlan in ('PerApiCall','PerTransaction','DefenderForStorageV2'), 'true',
     'false'
 )
 | extend planSet = tolower(strcat(planName, '-', subPlan))
-| extend extensions = properties.extensions
-| project subscriptionId, planName, planSet, freeTrialRemainingTime, resourcesCoverageStatus, isEnabled, isPlanDeprecated, subPlan, isSubPlanDeprecated, extensions, properties
+| extend extensions = tostring(properties.extensions)
+| project subscriptionId, planName, planSet, freeTrialRemainingTime, resourcesCoverageStatus, isEnabled, isPlanDeprecated, subPlan, isSubPlanDeprecated, extensions
