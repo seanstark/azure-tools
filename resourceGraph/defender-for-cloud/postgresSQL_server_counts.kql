@@ -1,5 +1,5 @@
 resources
-| extend planTypes = tolower('microsoft.keyvault/vaults')
+| extend planTypes = tolower('microsoft.dbforpostgresql/servers')
 | extend type = tolower(type)
 | where planTypes has type
 | where tolower(sku.tier) !contains 'basic'
