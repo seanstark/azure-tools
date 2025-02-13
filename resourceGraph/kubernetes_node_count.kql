@@ -1,0 +1,15 @@
+// Total Per Subscription
+Resources
+ | where type == "microsoft.containerservice/managedclusters"
+ | extend properties.agentPoolProfiles
+ | extend pool = (properties.agentPoolProfiles)[0]
+ | extend nodeCount = pool.['count']
+ | summarize numberofNodes = sum(toint(pool.['count'])) by subscriptionId
+
+// Total Per Tenant
+Resources
+ | where type == "microsoft.containerservice/managedclusters"
+ | extend properties.agentPoolProfiles
+ | extend pool = (properties.agentPoolProfiles)[0]
+ | extend nodeCount = pool.['count']
+ | summarize numberofNodes = sum(toint(pool.['count']))
