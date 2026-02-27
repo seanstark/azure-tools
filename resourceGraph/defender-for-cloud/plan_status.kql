@@ -1,0 +1,29 @@
+securityresources
+| where type =~ "microsoft.security/pricings"
+| extend pricingTier = case(properties.pricingTier == "Free", "Disabled", "Enabled")
+| extend subPlan = case(properties.subPlan == "PerTransaction", "Legacy", 
+                        properties.subPlan == "PerApiCall", "Legacy", 
+                        properties.subPlan == "DefenderForStorageV2", "Enabled",
+                        properties.subPlan == "PerSubscription", "Enabled",
+                        properties.subPlan)
+| extend planSet = pack(name, level = case(isnotempty(subPlan),subPlan,pricingTier))
+| summarize defenderPlans = make_bag(planSet) by subscriptionId
+| project subscriptionId,
+    DefenderCSPM = defenderPlans.CloudPosture,
+    AssetInventory = defenderPlans.Discovery,
+    FoundationalCSPM = defenderPlans.FoundationalCspm,
+    DefenderforServers = defenderPlans.VirtualMachines,
+    DefenderforAppServices = defenderPlans.AppServices,
+    DefenderforSqlServers = defenderPlans.SqlServers,
+    DefenderforSqlServersOnMachines = defenderPlans.SqlServerVirtualMachines,
+    DefenderforOpenSourceDBs = defenderPlans.OpenSourceRelationalDatabases,
+    DefenderforCosmosDB = defenderPlans.CosmosDbs,
+    DefenderforStorageAccounts = defenderPlans.StorageAccounts,
+    DefenderforContainers = defenderPlans.Containers,
+    DefenderforKeyVaults = defenderPlans.KeyVaults,
+    DefenderforResourceManager = defenderPlans.Arm,
+    DefenderforDNS = defenderPlans.Dns,
+    DefenderforKubernetes = defenderPlans.KubernetesService,
+    DefenderforContainerRegistry = defenderPlans.ContainerRegistry,
+    DefenderforAPI = defenderPlans.Api,
+    DefenderforAI = defenderPlans.AI
