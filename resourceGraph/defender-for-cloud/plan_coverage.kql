@@ -16,7 +16,7 @@ securityresources
         'base'
     )
 | extend isSubPlanDeprecated = case (
-    subPlan in ('PerApiCall','PerTransaction','DefenderForStorageV2'), 'true',
+    subPlan in ('PerApiCall','PerTransaction'), 'true',
     'false'
 )
 | extend planSet = tolower(strcat(planName, '-', subPlan))
