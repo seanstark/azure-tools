@@ -29,5 +29,11 @@ securityresources
     planSet == 'arm-perapicall', 'Defender for Resource Manager-persubscription',
     'n/a'
 )
+| extend isPlanDeprecated = case (
+    newPlanAvailable == 'true', 'true',
+    properties.deprecated != true, 'false',
+    tostring(properties.deprecated)
+)
 | extend extensions = tostring(properties.extensions)
 | project subscriptionId, planName, planSet, freeTrialRemainingTime, resourcesCoverageStatus, isEnabled, isPlanDeprecated, subPlan, newPlanAvailable, newPlanName, extensions
+| order by ['subPlan'] asc
