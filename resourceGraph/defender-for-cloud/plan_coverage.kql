@@ -15,10 +15,19 @@ securityresources
         isnotempty(properties.subPlan), tostring(properties.subPlan),
         'base'
     )
-| extend isSubPlanDeprecated = case (
+| extend newPlanAvailable = case (
     subPlan in ('PerApiCall','PerTransaction'), 'true',
+    isPlanDeprecated == 'true', 'true',
     'false'
 )
 | extend planSet = tolower(strcat(planName, '-', subPlan))
+| extend newPlanName = case ( 
+    planName in ('ContainerRegistry', 'KubernetesService'), 'Defender for Containers',
+    planName == 'Dns', 'Defender for Servers P2',
+    planSet == 'keyvaults-pertransaction', 'Defender for Key Vault-perkeyvault',
+    planSet == 'storageaccounts-pertransaction', 'Defender for Storage-peraccount',
+    planSet == 'arm-perapicall', 'Defender for Resource Manager-persubscription',
+    'n/a'
+)
 | extend extensions = tostring(properties.extensions)
-| project subscriptionId, planName, planSet, freeTrialRemainingTime, resourcesCoverageStatus, isEnabled, isPlanDeprecated, subPlan, isSubPlanDeprecated, extensions
+| project subscriptionId, planName, planSet, freeTrialRemainingTime, resourcesCoverageStatus, isEnabled, isPlanDeprecated, subPlan, newPlanAvailable, newPlanName, extensions
