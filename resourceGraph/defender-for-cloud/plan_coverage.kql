@@ -35,9 +35,9 @@ securityresources
     tostring(properties.deprecated)
 )
 | extend planName = case( 
-    planName == 'AI', 'Defender for AI',
+    planName == 'AI', 'Defender for AI services',
     planName == 'Api', 'Defender for APIs',
-    planName == 'AppServices', 'Defender for AppServices',
+    planName == 'AppServices', 'Defender for App Service',
     planName == 'Arm', 'Defender for Resource Manager',
     planName == 'CloudPosture', 'Defender for CSPM',
     planName == 'ContainerRegistry', 'Defender for Container Registry',
