@@ -34,6 +34,29 @@ securityresources
     properties.deprecated != true, 'false',
     tostring(properties.deprecated)
 )
+| extend planName = case( 
+    planName == 'AI', 'Defender for AI',
+    planName == 'Api', 'Defender for APIs',
+    planName == 'AppServices', 'Defender for AppServices',
+    planName == 'Arm', 'Defender for Resource Manager',
+    planName == 'CloudPosture', 'Defender for CSPM',
+    planName == 'ContainerRegistry', 'Defender for Container Registry',
+    planName == 'Containers', 'Defender for Containers',
+    planName == 'CosmosDbs', 'Defender for Azure Cosmos DB',
+    planName == 'Discovery', 'Free - Asset Discovery',
+    planName == 'Dns', 'Defender for DNS',
+    planName == 'FoundationalCspm', 'Free - Foundational CSPM',
+    planName == 'KeyVaults', 'Defender for Key Vault',
+    planName == 'KubernetesService', 'Defender for Kubernetes',
+    planName == 'OpenSourceRelationalDatabases', 'Defender for Open Source DBs',
+    planName == 'SqlServerVirtualMachines', 'Defender for SQL (Non Arc-enabled SQL Servers)',
+    planName == 'SqlServers', 'Defender for SQL',
+    planName == 'StorageAccounts', 'Defender for Storage',
+    planName == 'VirtualMachines', 'Defender for Servers',
+    planName
+)
 | extend extensions = tostring(properties.extensions)
 | project subscriptionId, planName, planSet, freeTrialRemainingTime, resourcesCoverageStatus, isEnabled, isPlanDeprecated, subPlan, newPlanAvailable, newPlanName, extensions
 | order by ['subPlan'] asc
+| order by ['subscriptionId'] asc
+| order by ['planName'] asc
