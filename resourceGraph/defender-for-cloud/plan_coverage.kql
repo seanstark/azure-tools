@@ -1,3 +1,8 @@
+resourcecontainers
+| where type == "microsoft.resources/subscriptions"
+| where properties.state == 'Enabled'
+| project subscriptionId, subscriptionName = name
+| join (
 securityresources
 | where type =~ 'microsoft.security/pricings'
 | extend planName = name
@@ -56,7 +61,6 @@ securityresources
     planName
 )
 | extend extensions = tostring(properties.extensions)
-| project subscriptionId, planName, planSet, freeTrialRemainingTime, resourcesCoverageStatus, isEnabled, isPlanDeprecated, subPlan, newPlanAvailable, newPlanName, extensions
-| order by ['subPlan'] asc
-| order by ['subscriptionId'] asc
-| order by ['planName'] asc
+| project subscriptionId, planName, subPlan, planSet, freeTrialRemainingTime, resourcesCoverageStatus, isEnabled, isPlanDeprecated, newPlanAvailable, newPlanName, extensions
+) on subscriptionId
+| project-away subscriptionId1
