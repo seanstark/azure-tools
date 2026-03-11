@@ -1,37 +1,7 @@
 resourcecontainers
 | where type == "microsoft.resources/subscriptions"
 | where properties.state == 'Enabled'
-| where subscriptionId == '0170aeee-3629-4d7a-b5af-b11c30f133c0'
 | project subscriptionId, subscriptionName = name, subscriptionState = properties.state
-| join (
-    resources
-    | extend type = tolower(type)
-    | where type in ('microsoft.compute/virtualmachines', 'microsoft.classiccompute/virtualmachines', 'microsoft.hybridcompute/machines', 'microsoft.compute/virtualmachinescalesets', 'microsoft.sql/servers', 'microsoft.storage/storageaccounts', 'microsoft.documentdb/databaseaccounts', 'microsoft.containerregistry/registries', 'microsoft.keyvault/vaults', 'microsoft.web/serverfarms', 'microsoft.dbforpostgresql/servers', 'microsoft.dbforpostgresql/flexibleservers', 'microsoft.dbformysql/servers', 'microsoft.dbformysql/flexibleservers', 'microsoft.dbformariadb/servers', 'microsoft.apimanagement/service', 'microsoft.sqlvirtualmachine/sqlvirtualmachines', 'microsoft.azurearcdata/sqlserverinstances', 'microsoft.cognitiveservices/accounts', 'microsoft.web/sites')
-    | parse id with '/subscriptions/'subscriptionId'/'rest
-    | extend bundleCount = 0, bundleName = pack_array('')
-    | extend bundleCount = iff(type in ('microsoft.compute/virtualmachines', 'microsoft.classiccompute/virtualmachines'), 1, bundleCount), bundleName  = iff(type in ('microsoft.compute/virtualmachines', 'microsoft.classiccompute/virtualmachines'), pack_array('virtualmachines', 'cloudposture'), bundleName)
-    | extend bundleCount = iff(type == 'microsoft.hybridcompute/machines' and tostring(properties.extended.instanceView.powerState.displayStatus) !contains 'deallocated'
-    and properties.status !in ('Expired','Disconnected'), 1, bundleCount), bundleName  = iff(type == 'microsoft.hybridcompute/machines', pack_array('virtualmachines'), bundleName)    
-    | extend bundleCount = iff(type == 'microsoft.compute/virtualmachinescalesets' and sku != '' and sku.capacity != '', toint(sku.capacity), bundleCount), bundleName = iff(type =~ 'microsoft.compute/virtualmachinescalesets' and sku != '' and sku.capacity != '', pack_array('virtualmachines', 'cloudposture'), bundleName)
-    | extend bundleCount = iff(type == 'microsoft.storage/storageaccounts', 1, bundleCount), bundleName = iff(type == 'microsoft.storage/storageaccounts', pack_array('storageaccounts', 'cloudposture'), bundleName)
-    | extend bundleCount = iff(type == 'microsoft.containerregistry/registries', 1, bundleCount), bundleName = iff(type == 'microsoft.containerregistry/registries', pack_array('containers', 'containerregistry'), bundleName)
-    | extend bundleCount = iff(type == 'microsoft.keyvault/vaults', 1, bundleCount), bundleName = iff(type == 'microsoft.keyvault/vaults', pack_array('keyvaults'), bundleName)
-    | extend bundleCount = iff(type == 'microsoft.web/serverfarms' and isnotempty(sku) and tolower(sku.tier) != 'consumption', toint(properties.numberOfWorkers), bundleCount), bundleName = iff(type == 'microsoft.web/serverfarms' and isnotempty(sku) and tolower(sku.tier) != 'consumption', pack_array('appservices'), bundleName)
-    | extend bundleCount = iff((type == 'microsoft.dbforpostgresql/servers' or type == 'microsoft.dbforpostgresql/flexibleservers' or type == 'microsoft.dbformysql/servers' or type == 'microsoft.dbformysql/flexibleservers' or type == 'microsoft.dbformariadb/servers') and sku.tier !contains ('basic'), 1, bundleCount), bundleName = iff((type =~ 'microsoft.dbforpostgresql/servers' or type =~ 'microsoft.dbforpostgresql/flexibleservers' or type =~ 'microsoft.dbformysql/servers' or type =~ 'microsoft.dbformysql/flexibleservers' or type =~ 'microsoft.dbformariadb/servers') and sku.tier !contains ('basic'), pack_array('opensourcerelationaldatabases', 'cloudposture'), bundleName)
-    | extend bundleCount = iff(type == 'microsoft.documentdb/databaseaccounts', 1, bundleCount), bundleName = iff(type == 'microsoft.documentdb/databaseaccounts', pack_array('cosmosdbs'), bundleName)
-    | extend bundleCount = iff(type == 'microsoft.apimanagement/service', 1, bundleCount), bundleName = iff(type == 'microsoft.apimanagement/service', pack_array('api'), bundleName)
-    | extend bundleCount = iff(type == 'microsoft.sql/servers', 1, bundleCount), bundleName = iff(type == 'microsoft.sql/servers', pack_array('sqlservers', 'cloudposture'), bundleName)
-    | extend bundleCount = iff(type == 'microsoft.sqlvirtualmachine/sqlvirtualmachines' or type == 'microsoft.azurearcdata/sqlserverinstances', 1, bundleCount), bundleName = iff(type == 'microsoft.sqlvirtualmachine/sqlvirtualmachines' or type == 'microsoft.azurearcdata/sqlserverinstances', pack_array('sqlservervirtualmachines'), bundleName)
-    | extend bundleCount = iff(type == 'microsoft.cognitiveservices/accounts' and kind in ('OpenAI', 'AIServices'), 1, bundleCount), bundleName = iff(type == 'microsoft.cognitiveservices/accounts' and kind in ('OpenAI', 'AIServices'), pack_array('ai'), bundleName)
-    | extend bundleCount = iff(type == 'microsoft.web/sites' and (tolower(kind) startswith 'app' or tolower(kind) startswith 'functionapp') and not(tolower(kind) contains 'workflowapp'), 1, bundleCount), bundleName = iff(type == 'microsoft.web/sites' and (tolower(kind) startswith 'app' or tolower(kind) startswith 'functionapp') and not(tolower(kind) contains 'workflowapp'), pack_array('serverless'), bundleName)
-    | mv-expand bundleName to typeof(string) limit 2000
-    | summarize resourcesCount = sum(bundleCount) by bundleName, subscriptionId
-    | where bundleName != ''
-    | summarize resourcesCount = sum(resourcesCount) by bundleName, subscriptionId
-    | project resourcesCount, subscriptionId, plan = bundleName
-    )
-    on subscriptionId
-| project-away subscriptionId1
 | join (
     securityresources
     | where type =~ 'microsoft.security/pricings'
@@ -92,5 +62,37 @@ resourcecontainers
         planName
         )
     | project subscriptionId, plan, planName, subPlan, planSet, freeTrialRemainingTime, resourcesCoverageStatus, isEnabled, isPlanDeprecated, newPlanAvailable, newPlanName
-)on subscriptionId, plan
-| order by ['subscriptionId'] asc
+) on subscriptionId
+| project-away subscriptionId1
+| join kind=leftouter (
+resources
+    | extend type = tolower(type)
+    | where type in ('microsoft.compute/virtualmachines', 'microsoft.classiccompute/virtualmachines', 'microsoft.hybridcompute/machines', 'microsoft.compute/virtualmachinescalesets', 'microsoft.sql/servers', 'microsoft.storage/storageaccounts', 'microsoft.documentdb/databaseaccounts', 'microsoft.containerregistry/registries', 'microsoft.keyvault/vaults', 'microsoft.web/serverfarms', 'microsoft.dbforpostgresql/servers', 'microsoft.dbforpostgresql/flexibleservers', 'microsoft.dbformysql/servers', 'microsoft.dbformysql/flexibleservers', 'microsoft.dbformariadb/servers', 'microsoft.apimanagement/service', 'microsoft.sqlvirtualmachine/sqlvirtualmachines', 'microsoft.azurearcdata/sqlserverinstances', 'microsoft.cognitiveservices/accounts', 'microsoft.web/sites')
+    | parse id with '/subscriptions/'subscriptionId'/'rest
+    | extend bundleCount = 0, bundleName = pack_array('')
+    | extend bundleCount = iff(type in ('microsoft.compute/virtualmachines', 'microsoft.classiccompute/virtualmachines') and tostring(properties.extended.instanceView.powerState.displayStatus) !contains 'deallocated' , 1, bundleCount), bundleName  = iff(type in ('microsoft.compute/virtualmachines', 'microsoft.classiccompute/virtualmachines')  and tostring(properties.extended.instanceView.powerState.displayStatus) !contains 'deallocated', pack_array('virtualmachines', 'cloudposture'), bundleName)
+    | extend bundleCount = iff(type == 'microsoft.hybridcompute/machines' and tostring(properties.extended.instanceView.powerState.displayStatus) !contains 'deallocated'
+    and properties.status !in ('Expired','Disconnected'), 1, bundleCount), bundleName  = iff(type == 'microsoft.hybridcompute/machines', pack_array('virtualmachines'), bundleName)
+       | extend bundleCount = iff(type == 'microsoft.compute/virtualmachinescalesets' and sku != '' and sku.capacity != '' and tostring(properties.virtualMachineProfile.extensionProfile) !contains 'Compute.AKS', toint(sku.capacity), bundleCount), 
+    bundleName = iff(type =~ 'microsoft.compute/virtualmachinescalesets' and sku != '' and sku.capacity != '' and tostring(properties.virtualMachineProfile.extensionProfile) !contains 'Compute.AKS', pack_array('virtualmachines'), bundleName)    
+    | extend bundleCount = iff(type == 'microsoft.compute/virtualmachinescalesets' and sku != '' and sku.capacity != '', toint(sku.capacity), bundleCount), bundleName = iff(type =~ 'microsoft.compute/virtualmachinescalesets' and sku != '' and sku.capacity != '', pack_array('cloudposture'), bundleName)
+    | extend bundleCount = iff(type == 'microsoft.storage/storageaccounts', 1, bundleCount), bundleName = iff(type == 'microsoft.storage/storageaccounts', pack_array('storageaccounts', 'cloudposture'), bundleName)
+    | extend bundleCount = iff(type == 'microsoft.containerregistry/registries', 1, bundleCount), bundleName = iff(type == 'microsoft.containerregistry/registries', pack_array('containers', 'containerregistry'), bundleName)
+    | extend bundleCount = iff(type == 'microsoft.keyvault/vaults', 1, bundleCount), bundleName = iff(type == 'microsoft.keyvault/vaults', pack_array('keyvaults'), bundleName)
+    | extend bundleCount = iff(type == 'microsoft.web/serverfarms' and isnotempty(sku) and tolower(sku.tier) != 'consumption', toint(properties.numberOfWorkers), bundleCount), bundleName = iff(type == 'microsoft.web/serverfarms' and isnotempty(sku) and tolower(sku.tier) != 'consumption', pack_array('appservices'), bundleName)
+    | extend bundleCount = iff((type == 'microsoft.dbforpostgresql/servers' or type == 'microsoft.dbforpostgresql/flexibleservers' or type == 'microsoft.dbformysql/servers' or type == 'microsoft.dbformysql/flexibleservers' or type == 'microsoft.dbformariadb/servers') and sku.tier !contains ('basic'), 1, bundleCount), bundleName = iff((type =~ 'microsoft.dbforpostgresql/servers' or type =~ 'microsoft.dbforpostgresql/flexibleservers' or type =~ 'microsoft.dbformysql/servers' or type =~ 'microsoft.dbformysql/flexibleservers' or type =~ 'microsoft.dbformariadb/servers') and sku.tier !contains ('basic'), pack_array('opensourcerelationaldatabases', 'cloudposture'), bundleName)
+    | extend bundleCount = iff(type == 'microsoft.documentdb/databaseaccounts', 1, bundleCount), bundleName = iff(type == 'microsoft.documentdb/databaseaccounts', pack_array('cosmosdbs'), bundleName)
+    | extend bundleCount = iff(type == 'microsoft.apimanagement/service', 1, bundleCount), bundleName = iff(type == 'microsoft.apimanagement/service', pack_array('api'), bundleName)
+    | extend bundleCount = iff(type == 'microsoft.sql/servers', 1, bundleCount), bundleName = iff(type == 'microsoft.sql/servers', pack_array('sqlservers', 'cloudposture'), bundleName)
+    | extend bundleCount = iff(type == 'microsoft.sqlvirtualmachine/sqlvirtualmachines' or type == 'microsoft.azurearcdata/sqlserverinstances', 1, bundleCount), bundleName = iff(type == 'microsoft.sqlvirtualmachine/sqlvirtualmachines' or type == 'microsoft.azurearcdata/sqlserverinstances', pack_array('sqlservervirtualmachines'), bundleName)
+    | extend bundleCount = iff(type == 'microsoft.cognitiveservices/accounts' and kind in ('OpenAI', 'AIServices'), 1, bundleCount), bundleName = iff(type == 'microsoft.cognitiveservices/accounts' and kind in ('OpenAI', 'AIServices'), pack_array('ai'), bundleName)
+    | extend bundleCount = iff(type == 'microsoft.web/sites' and (tolower(kind) startswith 'app' or tolower(kind) startswith 'functionapp') and not(tolower(kind) contains 'workflowapp'), 1, bundleCount), bundleName = iff(type == 'microsoft.web/sites' and (tolower(kind) startswith 'app' or tolower(kind) startswith 'functionapp') and not(tolower(kind) contains 'workflowapp'), pack_array('serverless'), bundleName)
+    | mv-expand bundleName to typeof(string) limit 2000
+    | summarize resourcesCount = sum(bundleCount) by bundleName, subscriptionId
+    | where bundleName != ''
+    | summarize resourcesCount = sum(resourcesCount) by bundleName, subscriptionId
+    | project resourcesCount, subscriptionId, plan = bundleName
+    )
+    on subscriptionId, plan
+| where plan contains "container"
+| project subscriptionId, subscriptionName, subscriptionState, planName, subPlan, plan, isEnabled, isPlanDeprecated, newPlanAvailable, newPlanName, resourcesCount
