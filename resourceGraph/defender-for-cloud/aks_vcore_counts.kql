@@ -1,9 +1,18 @@
 Resources
- | where type == 'microsoft.containerservice/managedclusters'
- | extend pool = (properties.agentPoolProfiles)
- | mv-expand pool
- | extend cpuCores = toint(extract_all(@'(\d+)', tostring(split(pool.vmSize, '_')[1]))[0]) * pool.['count']
- | project subscriptionId, resourceGroup, cluster = name, size = pool.vmSize, cpuCores, poolcount = pool.['count']
- | extend resourceType = 'AKS vCores'
- | extend productName = 'Defender for Containers'
- | summarize count = sum(cpuCores) by subscriptionId, resourceGroup, productName, resourceType
+| where type == 'microsoft.containerservice/managedclusters'
+| where isnotempty(sku) and tolower(sku.tier) != "consumption" 
+| where tostring(properties.powerState.code) =~ 'Running'
+| extend pool = (properties.agentPoolProfiles)
+| mv-expand pool
+| extend cpuCores = toint(extract_all(@'(\d+)', tostring(split(pool.vmSize, '_')[1]))[0]) * pool.['count']
+| project subscriptionId, resourceGroup, cluster = name, size = pool.vmSize, cpuCores, poolcount = pool.['count']
+| summarize coreCount = sum(cpuCores) by subscriptionId
+| union (
+    resources
+    | where tolower(type) =~ "microsoft.kubernetes/connectedclusters"
+    | where properties.connectivityStatus !in ('Offline', 'Expired')
+    | extend cpuCores = toint(properties.totalCoreCount), poolcount = toint(properties.totalNodeCount)
+    | project subscriptionId, resourceGroup, cluster = name, poolcount, cpuCores
+    | summarize coreCount = sum(cpuCores) by subscriptionId
+    )
+| summarize resourceCount = sum(coreCount) by subscriptionId
