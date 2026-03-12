@@ -1,8 +1,29 @@
+// SQL Virtual Machines
 resources
-| extend planTypes = tolower('microsoft.sql/servers, microsoft.sql/managedinstances')
-| extend type = tolower(type)
-| where planTypes has type
-| where ['kind'] !contains 'analytics'
-| extend resourceType = 'SQL Server'
-| extend productName = 'Defender for SQL'
-| summarize count = count() by subscriptionId, resourceGroup, productName, resourceType
+| where type == 'microsoft.sqlvirtualmachine/sqlvirtualmachines'
+| project tolower(id), name, properties.osType, properties.sqlImageOffer, vmId = tolower(tostring(properties.virtualMachineResourceId))
+| join (
+resources
+| where type == "microsoft.compute/virtualmachines"
+| extend osName = tostring(properties.extended.instanceView.osName)
+| extend state = tostring(properties.extended.instanceView.powerState.displayStatus)
+| where state !contains 'deallocated'
+| where osName contains "Server" and osName !endswith "2012"
+| project vmName=name, vmId = tolower(id), osName, state
+) on vmId
+
+// SQL Arc Connected Machines
+resources
+| where type == "microsoft.azurearcdata/sqlserverinstances"
+| extend version = properties.version
+| extend versionReq = parse_version('11.0.0.0')
+| extend patchLevel = parse_version(tostring(properties.patchLevel))
+| where parse_version(tostring(properties.patchLevel)) >= parse_version('11.0.0.0')
+| project id, vmId = tolower(tostring(properties.containerResourceId)), version, tostring(patchLevel), tostring(versionReq), properties
+| join (
+resources
+| where type == "microsoft.hybridcompute/machines"
+| extend vmId = tolower(tostring(id)), osType = properties.osType, serverType = properties.detectedProperties.serverType, osSku = properties.osSku, osVersion=properties.osVersion
+| where osType =~ 'windows' and osSku has "Server" and osSku !endswith "2012"
+| project vmId, name
+) on vmId
