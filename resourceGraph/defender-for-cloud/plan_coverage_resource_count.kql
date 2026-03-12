@@ -1,7 +1,6 @@
 resourcecontainers
 | where type == "microsoft.resources/subscriptions"
 | where properties.state == 'Enabled'
-//| where subscriptionId == '0170aeee-3629-4d7a-b5af-b11c30f133c0'
 | project subscriptionId, subscriptionName = name, subscriptionState = properties.state
 | join (
     securityresources
