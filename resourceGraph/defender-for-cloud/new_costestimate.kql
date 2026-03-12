@@ -32,7 +32,7 @@ resources
     // Defender for API Management, does not count API calls
     | extend bundleCount = iff(type == 'microsoft.apimanagement/service', 1, bundleCount), bundleName = iff(type == 'microsoft.apimanagement/service', pack_array('api'), bundleName)
     // Defender for SQL
-    | extend bundleCount = iff(type == 'microsoft.sql/servers', 1, bundleCount), bundleName = iff(type == 'microsoft.sql/servers', pack_array('sqlservers', 'cloudposture'), bundleName)
+    | extend bundleCount = iff(type in ('microsoft.sql/servers', 'microsoft.sql/managedinstances'), 1, bundleCount), bundleName = iff(type in ('microsoft.sql/servers', 'microsoft.sql/managedinstances'), pack_array('sqlservers', 'cloudposture'), bundleName)
     // Defender for SQL on Machines
     | extend bundleCount = iff(type == 'microsoft.sqlvirtualmachine/sqlvirtualmachines' or type == 'microsoft.azurearcdata/sqlserverinstances', 1, bundleCount), bundleName = iff(type == 'microsoft.sqlvirtualmachine/sqlvirtualmachines' or type == 'microsoft.azurearcdata/sqlserverinstances', pack_array('sqlservervirtualmachines'), bundleName)
     // Defender for AI, does not count AI Tokens
