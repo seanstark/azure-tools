@@ -1,32 +1,46 @@
-resourcecontainers
-| where type == "microsoft.resources/subscriptions"
-| where properties.state == 'Enabled'
-| project subscriptionId, subscriptionName = name
-| join (
-    resources
+resources
     | extend type = tolower(type)
     | where type in ('microsoft.compute/virtualmachines', 'microsoft.classiccompute/virtualmachines', 'microsoft.hybridcompute/machines', 'microsoft.compute/virtualmachinescalesets', 'microsoft.sql/servers', 'microsoft.storage/storageaccounts', 'microsoft.documentdb/databaseaccounts', 'microsoft.containerregistry/registries', 'microsoft.keyvault/vaults', 'microsoft.web/serverfarms', 'microsoft.dbforpostgresql/servers', 'microsoft.dbforpostgresql/flexibleservers', 'microsoft.dbformysql/servers', 'microsoft.dbformysql/flexibleservers', 'microsoft.dbformariadb/servers', 'microsoft.apimanagement/service', 'microsoft.sqlvirtualmachine/sqlvirtualmachines', 'microsoft.azurearcdata/sqlserverinstances', 'microsoft.cognitiveservices/accounts', 'microsoft.web/sites')
     | parse id with '/subscriptions/'subscriptionId'/'rest
     | extend bundleCount = 0, bundleName = pack_array('')
-    | extend bundleCount = iff(type in ('microsoft.compute/virtualmachines', 'microsoft.classiccompute/virtualmachines'), 1, bundleCount), bundleName  = iff(type in ('microsoft.compute/virtualmachines', 'microsoft.classiccompute/virtualmachines'), pack_array('virtualmachines', 'cloudposture'), bundleName)
-    | extend bundleCount = iff(type == 'microsoft.hybridcompute/machines', 1, bundleCount), bundleName  = iff(type == 'microsoft.hybridcompute/machines', pack_array('virtualmachines'), bundleName)
-    | extend bundleCount = iff(type == 'microsoft.compute/virtualmachinescalesets' and sku != '' and sku.capacity != '', toint(sku.capacity), bundleCount), bundleName = iff(type =~ 'microsoft.compute/virtualmachinescalesets' and sku != '' and sku.capacity != '', pack_array('virtualmachines', 'cloudposture'), bundleName)
+    // Defender for Servers, virtual machines, exclude deallocated
+    | extend bundleCount = iff(type in ('microsoft.compute/virtualmachines', 'microsoft.classiccompute/virtualmachines') and tostring(properties.extended.instanceView.powerState.displayStatus) !contains 'deallocated', 1, bundleCount), 
+    bundleName  = iff(type in ('microsoft.compute/virtualmachines', 'microsoft.classiccompute/virtualmachines') and tostring(properties.extended.instanceView.powerState.displayStatus) !contains 'deallocated', pack_array('virtualmachines', 'cloudposture'), bundleName)
+    // Defender for CSPM, virtual machines, exclude deallocated & Databricks
+    | extend bundleCount = iff(type in ('microsoft.compute/virtualmachines', 'microsoft.classiccompute/virtualmachines') and tostring(properties.extended.instanceView.powerState.displayStatus) !contains 'deallocated' and 
+    tostring(properties.storageProfile.imageReference.offer) !contains 'Databricks', 1, bundleCount), 
+    bundleName  = iff(type in ('microsoft.compute/virtualmachines', 'microsoft.classiccompute/virtualmachines') and tostring(properties.extended.instanceView.powerState.displayStatus) !contains 'deallocated' and 
+    tostring(properties.storageProfile.imageReference.offer) !contains 'Databricks', pack_array('virtualmachines', 'cloudposture'), bundleName)
+    // Defender for Servers, Arc Connected Machines, exclude Expired & Disconnected machines
+    | extend bundleCount = iff(type == 'microsoft.hybridcompute/machines' and properties.status !in ('Expired','Disconnected'), 1, bundleCount), bundleName  = iff(type == 'microsoft.hybridcompute/machines' and properties.status !in ('Expired','Disconnected'), pack_array('virtualmachines'), bundleName)
+    // Defender CSPM Virtual Machine Scalesets
+    | extend bundleCount = iff(type == 'microsoft.compute/virtualmachinescalesets' and sku != '' and sku.capacity != '', toint(sku.capacity), bundleCount), bundleName = iff(type =~ 'microsoft.compute/virtualmachinescalesets' and sku != '' and sku.capacity != '', pack_array('cloudposture'), bundleName)
+    // Defender Servers Virtual Machine Scalesets, exclude AKS Nodes
+    | extend bundleCount = iff(type == 'microsoft.compute/virtualmachinescalesets' and sku != '' and sku.capacity != '' and tostring(properties.virtualMachineProfile.extensionProfile) !contains 'Compute.AKS', toint(sku.capacity), bundleCount), bundleName = iff(type =~ 'microsoft.compute/virtualmachinescalesets' and sku != '' and sku.capacity != '' and tostring(properties.virtualMachineProfile.extensionProfile) !contains 'Compute.AKS', pack_array('virtualmachines'), bundleName)  
+    // Defender for Storage
     | extend bundleCount = iff(type == 'microsoft.storage/storageaccounts', 1, bundleCount), bundleName = iff(type == 'microsoft.storage/storageaccounts', pack_array('storageaccounts', 'cloudposture'), bundleName)
+    // Defender for Containers, Container Registries only
     | extend bundleCount = iff(type == 'microsoft.containerregistry/registries', 1, bundleCount), bundleName = iff(type == 'microsoft.containerregistry/registries', pack_array('containerregistry'), bundleName)
+    // Defender for Key Vault
     | extend bundleCount = iff(type == 'microsoft.keyvault/vaults', 1, bundleCount), bundleName = iff(type == 'microsoft.keyvault/vaults', pack_array('keyvaults'), bundleName)
+    // Defender for App Services
     | extend bundleCount = iff(type == 'microsoft.web/serverfarms' and isnotempty(sku) and tolower(sku.tier) != 'consumption', toint(properties.numberOfWorkers), bundleCount), bundleName = iff(type == 'microsoft.web/serverfarms' and isnotempty(sku) and tolower(sku.tier) != 'consumption', pack_array('appservices'), bundleName)
+    // Defender CSPM, Defender for OpenSource DBs
     | extend bundleCount = iff((type == 'microsoft.dbforpostgresql/servers' or type == 'microsoft.dbforpostgresql/flexibleservers' or type == 'microsoft.dbformysql/servers' or type == 'microsoft.dbformysql/flexibleservers' or type == 'microsoft.dbformariadb/servers') and sku.tier !contains ('basic'), 1, bundleCount), bundleName = iff((type =~ 'microsoft.dbforpostgresql/servers' or type =~ 'microsoft.dbforpostgresql/flexibleservers' or type =~ 'microsoft.dbformysql/servers' or type =~ 'microsoft.dbformysql/flexibleservers' or type =~ 'microsoft.dbformariadb/servers') and sku.tier !contains ('basic'), pack_array('opensourcerelationaldatabases', 'cloudposture'), bundleName)
+    // Defender for Cosmos DB, does not count RSUs
     | extend bundleCount = iff(type == 'microsoft.documentdb/databaseaccounts', 1, bundleCount), bundleName = iff(type == 'microsoft.documentdb/databaseaccounts', pack_array('cosmosdbs'), bundleName)
+    // Defender for API Management, does not count API calls
     | extend bundleCount = iff(type == 'microsoft.apimanagement/service', 1, bundleCount), bundleName = iff(type == 'microsoft.apimanagement/service', pack_array('api'), bundleName)
     | extend bundleCount = iff(type == 'microsoft.sql/servers', 1, bundleCount), bundleName = iff(type == 'microsoft.sql/servers', pack_array('sqlservers', 'cloudposture'), bundleName)
     | extend bundleCount = iff(type == 'microsoft.sqlvirtualmachine/sqlvirtualmachines' or type == 'microsoft.azurearcdata/sqlserverinstances', 1, bundleCount), bundleName = iff(type == 'microsoft.sqlvirtualmachine/sqlvirtualmachines' or type == 'microsoft.azurearcdata/sqlserverinstances', pack_array('sqlservervirtualmachines'), bundleName)
+    // Defender for AI, does not count AI Tokens
     | extend bundleCount = iff(type == 'microsoft.cognitiveservices/accounts' and kind in ('OpenAI', 'AIServices'), 1, bundleCount), bundleName = iff(type == 'microsoft.cognitiveservices/accounts' and kind in ('OpenAI', 'AIServices'), pack_array('ai'), bundleName)
+    // Defender CSPM, serverless
     | extend bundleCount = iff(type == 'microsoft.web/sites' and (tolower(kind) startswith 'app' or tolower(kind) startswith 'functionapp') and not(tolower(kind) contains 'workflowapp'), 1, bundleCount), bundleName = iff(type == 'microsoft.web/sites' and (tolower(kind) startswith 'app' or tolower(kind) startswith 'functionapp') and not(tolower(kind) contains 'workflowapp'), pack_array('serverless'), bundleName)
     | mv-expand bundleName to typeof(string) limit 2000
     | summarize resourceCount = sum(bundleCount) by subscriptionId, bundleName
     | where bundleName != ''
-    )
-    on subscriptionId
+// Defender for Containers vcore Counts
 | union (
     resourcecontainers
     | where type == "microsoft.resources/subscriptions"
@@ -53,4 +67,4 @@ resourcecontainers
         | summarize resourceCount = sum(coreCount) by subscriptionId, bundleName = 'containers'
     ) on subscriptionId
 )
-| project subscriptionId, subscriptionName, bundleName, resourceCount
+| project subscriptionId, plan = bundleName, resourceCount
