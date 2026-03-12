@@ -15,11 +15,8 @@ resources
 // SQL Arc Connected Machines
 resources
 | where type == "microsoft.azurearcdata/sqlserverinstances"
-| extend version = properties.version
-| extend versionReq = parse_version('11.0.0.0')
-| extend patchLevel = parse_version(tostring(properties.patchLevel))
 | where parse_version(tostring(properties.patchLevel)) >= parse_version('11.0.0.0')
-| project id, vmId = tolower(tostring(properties.containerResourceId)), version, tostring(patchLevel), tostring(versionReq), properties
+| project id, vmId = tolower(tostring(properties.containerResourceId))
 | join (
 resources
 | where type == "microsoft.hybridcompute/machines"
