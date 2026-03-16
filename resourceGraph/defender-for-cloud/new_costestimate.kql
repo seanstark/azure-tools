@@ -1,18 +1,22 @@
-resources
+resourcecontainers
+| where type == "microsoft.resources/subscriptions"
+| where properties.state == 'Enabled'
+| project subscriptionId, subscriptionName = name
+| join (
+    resources
     | extend type = tolower(type)
     | where type in ('microsoft.sql/managedinstances', 'microsoft.compute/virtualmachines', 'microsoft.classiccompute/virtualmachines', 'microsoft.hybridcompute/machines', 'microsoft.compute/virtualmachinescalesets', 'microsoft.sql/servers', 'microsoft.storage/storageaccounts', 'microsoft.documentdb/databaseaccounts', 'microsoft.containerregistry/registries', 'microsoft.keyvault/vaults', 'microsoft.web/serverfarms', 'microsoft.dbforpostgresql/servers', 'microsoft.dbforpostgresql/flexibleservers', 'microsoft.dbformysql/servers', 'microsoft.dbformysql/flexibleservers', 'microsoft.dbformariadb/servers', 'microsoft.apimanagement/service', 'microsoft.sqlvirtualmachine/sqlvirtualmachines', 'microsoft.azurearcdata/sqlserverinstances', 'microsoft.cognitiveservices/accounts', 'microsoft.web/sites')
-    | parse id with '/subscriptions/'subscriptionId'/'rest
     | extend bundleCount = 0, bundleName = pack_array('')
     // Defender for Servers, virtual machines, exclude deallocated
     | extend bundleCount = iff(type in ('microsoft.compute/virtualmachines', 'microsoft.classiccompute/virtualmachines') and tostring(properties.extended.instanceView.powerState.displayStatus) !contains 'deallocated', 1, bundleCount), 
-    bundleName  = iff(type in ('microsoft.compute/virtualmachines', 'microsoft.classiccompute/virtualmachines') and tostring(properties.extended.instanceView.powerState.displayStatus) !contains 'deallocated', pack_array('virtualmachines', 'cloudposture'), bundleName)
+        bundleName  = iff(type in ('microsoft.compute/virtualmachines', 'microsoft.classiccompute/virtualmachines') and tostring(properties.extended.instanceView.powerState.displayStatus) !contains 'deallocated', pack_array('virtualmachines', 'cloudposture'), bundleName)
     // Defender for CSPM, virtual machines, exclude deallocated & Databricks
     | extend bundleCount = iff(type in ('microsoft.compute/virtualmachines', 'microsoft.classiccompute/virtualmachines') and tostring(properties.extended.instanceView.powerState.displayStatus) !contains 'deallocated' and 
-    tostring(properties.storageProfile.imageReference.offer) !contains 'Databricks', 1, bundleCount), 
-    bundleName  = iff(type in ('microsoft.compute/virtualmachines', 'microsoft.classiccompute/virtualmachines') and tostring(properties.extended.instanceView.powerState.displayStatus) !contains 'deallocated' and 
-    tostring(properties.storageProfile.imageReference.offer) !contains 'Databricks', pack_array('virtualmachines', 'cloudposture'), bundleName)
+        tostring(properties.storageProfile.imageReference.offer) !contains 'Databricks', 1, bundleCount), 
+        bundleName  = iff(type in ('microsoft.compute/virtualmachines', 'microsoft.classiccompute/virtualmachines') and tostring(properties.extended.instanceView.powerState.displayStatus) !contains 'deallocated' and 
+        tostring(properties.storageProfile.imageReference.offer) !contains 'Databricks', pack_array('virtualmachines', 'cloudposture'), bundleName)
     // Defender for Servers, Arc Connected Machines, exclude Expired & Disconnected machines
-    | extend bundleCount = iff(type == 'microsoft.hybridcompute/machines' and properties.status !in ('Expired','Disconnected'), 1, bundleCount), bundleName  = iff(type == 'microsoft.hybridcompute/machines' and properties.status !in ('Expired','Disconnected'), pack_array('virtualmachines'), bundleName)
+    | extend bundleCount = iff(type == 'microsoft.hybridcompute/machines' and properties.status !in ('Expired', 'Disconnected'), 1, bundleCount), bundleName  = iff(type == 'microsoft.hybridcompute/machines' and properties.status !in ('Expired', 'Disconnected'), pack_array('virtualmachines'), bundleName)
     // Defender CSPM Virtual Machine Scalesets
     | extend bundleCount = iff(type == 'microsoft.compute/virtualmachinescalesets' and sku != '' and sku.capacity != '', toint(sku.capacity), bundleCount), bundleName = iff(type =~ 'microsoft.compute/virtualmachinescalesets' and sku != '' and sku.capacity != '', pack_array('cloudposture'), bundleName)
     // Defender Servers Virtual Machine Scalesets, exclude AKS Nodes
@@ -43,36 +47,40 @@ resources
     | summarize resourceCount = sum(bundleCount) by subscriptionId, bundleName
     // Update serverless counts to reflect 8:1 billing
     | extend resourceCount = case(
-       bundleName == 'serverless' and resourceCount <= 8, 1,
-       bundleName == 'serverless' and resourceCount > 8, tolong(ceiling(todouble(resourceCount) / 8.0)),
-       resourceCount
-    )
+        bundleName == 'serverless' and resourceCount <= 8, 1,
+        bundleName == 'serverless' and resourceCount > 8, tolong(ceiling(todouble(resourceCount) / 8.0)),
+        resourceCount
+        )
     | where bundleName != ''
-// Defender for Containers vcore Counts
-| union (
-    resourcecontainers
-    | where type == "microsoft.resources/subscriptions"
-    | where properties.state == 'Enabled'
-    | project subscriptionId, subscriptionName = name
-    | join ( 
-        resources
-        | where type == 'microsoft.containerservice/managedclusters'
-        | where isnotempty(sku) and tolower(sku.tier) != "consumption" 
-        | where tostring(properties.powerState.code) =~ 'Running'
-        | extend pool = (properties.agentPoolProfiles)
-        | mv-expand pool
-        | extend cpuCores = toint(extract_all(@'(\d+)', tostring(split(pool.vmSize, '_')[1]))[0]) * pool.['count']
-        | project subscriptionId, resourceGroup, cluster = name, size = pool.vmSize, cpuCores, poolcount = pool.['count']
-        | summarize coreCount = sum(cpuCores) by subscriptionId
-        | union (
+    // Defender for Containers vcore Counts
+    | union (
+        resourcecontainers
+        | where type == "microsoft.resources/subscriptions"
+        | where properties.state == 'Enabled'
+        | project subscriptionId, subscriptionName = name
+        | join ( 
             resources
-            | where tolower(type) =~ "microsoft.kubernetes/connectedclusters"
-            | where properties.connectivityStatus !in ('Offline', 'Expired')
-            | extend cpuCores = toint(properties.totalCoreCount), poolcount = toint(properties.totalNodeCount)
-            | project subscriptionId, resourceGroup, cluster = name, poolcount, cpuCores
+            | where type == 'microsoft.containerservice/managedclusters'
+            | where isnotempty(sku) and tolower(sku.tier) != "consumption" 
+            | where tostring(properties.powerState.code) =~ 'Running'
+            | extend pool = (properties.agentPoolProfiles)
+            | mv-expand pool
+            | extend cpuCores = toint(extract_all(@'(\d+)', tostring(split(pool.vmSize, '_')[1]))[0]) * pool.['count']
+            | project subscriptionId, resourceGroup, cluster = name, size = pool.vmSize, cpuCores, poolcount = pool.['count']
             | summarize coreCount = sum(cpuCores) by subscriptionId
+            | union (
+                resources
+                | where tolower(type) =~ "microsoft.kubernetes/connectedclusters"
+                | where properties.connectivityStatus !in ('Offline', 'Expired')
+                | extend cpuCores = toint(properties.totalCoreCount), poolcount = toint(properties.totalNodeCount)
+                | project subscriptionId, resourceGroup, cluster = name, poolcount, cpuCores
+                | summarize coreCount = sum(cpuCores) by subscriptionId
+                )
+            | summarize resourceCount = sum(coreCount) by subscriptionId, bundleName = 'containers'
             )
-        | summarize resourceCount = sum(coreCount) by subscriptionId, bundleName = 'containers'
-    ) on subscriptionId
-)
-| project subscriptionId, plan = bundleName, resourceCount
+            on subscriptionId
+        )
+    | project subscriptionId, plan = bundleName, resourceCount
+    ) 
+    on subscriptionId
+| project-away subscriptionId1
