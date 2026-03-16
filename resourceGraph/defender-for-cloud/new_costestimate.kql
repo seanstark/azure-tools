@@ -23,8 +23,6 @@ resourcecontainers
     | extend bundleCount = iff(type == 'microsoft.compute/virtualmachinescalesets' and sku != '' and sku.capacity != '' and tostring(properties.virtualMachineProfile.extensionProfile) !contains 'Compute.AKS', toint(sku.capacity), bundleCount), bundleName = iff(type =~ 'microsoft.compute/virtualmachinescalesets' and sku != '' and sku.capacity != '' and tostring(properties.virtualMachineProfile.extensionProfile) !contains 'Compute.AKS', pack_array('virtualmachines'), bundleName)  
     // Defender for Storage
     | extend bundleCount = iff(type == 'microsoft.storage/storageaccounts', 1, bundleCount), bundleName = iff(type == 'microsoft.storage/storageaccounts', pack_array('storageaccounts', 'cloudposture'), bundleName)
-    // Defender for Containers, Container Registries only
-    | extend bundleCount = iff(type == 'microsoft.containerregistry/registries', 1, bundleCount), bundleName = iff(type == 'microsoft.containerregistry/registries', pack_array('containerregistry'), bundleName)
     // Defender for Key Vault
     | extend bundleCount = iff(type == 'microsoft.keyvault/vaults', 1, bundleCount), bundleName = iff(type == 'microsoft.keyvault/vaults', pack_array('keyvaults'), bundleName)
     // Defender for App Services
