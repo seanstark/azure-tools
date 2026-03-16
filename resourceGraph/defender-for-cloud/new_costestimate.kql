@@ -41,6 +41,12 @@ resources
     | extend bundleCount = iff(type == 'microsoft.web/sites' and (tolower(kind) startswith 'app' or tolower(kind) startswith 'functionapp') and not(tolower(kind) contains 'workflowapp'), 1, bundleCount), bundleName = iff(type == 'microsoft.web/sites' and (tolower(kind) startswith 'app' or tolower(kind) startswith 'functionapp') and not(tolower(kind) contains 'workflowapp'), pack_array('serverless'), bundleName)
     | mv-expand bundleName to typeof(string) limit 2000
     | summarize resourceCount = sum(bundleCount) by subscriptionId, bundleName
+    // Update serverless counts to reflect 8:1 billing
+    | extend resourceCount = case(
+       bundleName == 'serverless' and resourceCount <= 8, 1,
+       bundleName == 'serverless' and resourceCount > 8, tolong(ceiling(todouble(resourceCount) / 8.0)),
+       resourceCount
+    )
     | where bundleName != ''
 // Defender for Containers vcore Counts
 | union (
