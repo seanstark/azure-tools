@@ -35,8 +35,12 @@ securityresources
 | extend oidcIssuerProfile = properties.oidcIssuerProfile
 | extend privateCluster = properties.apiServerAccessProfile.enablePrivateCluster
 | extend privateLinkResources= properties.privateLinkResources
+| extend networkPlugin = properties.networkProfile.networkPlugin
+| extend networkPolicy = properties.networkProfile.networkPolicy
+| extend networkDataplane = properties.networkProfile.networkDataplane
+| extend outboundType = properties.networkProfile.outboundType
 | extend kubernetesVersion = properties.kubernetesVersion
 | extend defenderEnabled = properties.securityProfile.defender.securityMonitoring.enabled
 | extend kubeVerMetforDefender = iff(parse_version(tostring(kubernetesVersion)) >= parse_version('1.19'), 'true', 'false')
 | extend kubeVerMetforOIDC = iff(parse_version(tostring(kubernetesVersion)) >= parse_version('1.22'), 'true', 'false')
-| project subscriptionId, subscriptionName, planName, isPlanEnabled, isPlanDeprecated, resourceGroup, clusterName = name, kubernetesVersion, oidcIssuerProfile, privateCluster, defenderEnabled, kubeVerMetforDefender, kubeVerMetforOIDC, privateLinkResources,properties
+| project subscriptionId, subscriptionName, planName, isPlanEnabled, isPlanDeprecated, resourceGroup, clusterName = name, kubernetesVersion, oidcIssuerProfile, privateCluster, defenderEnabled, kubeVerMetforDefender, kubeVerMetforOIDC, outboundType, networkPlugin, networkPolicy, networkDataplane, privateLinkResources, properties
