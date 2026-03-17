@@ -32,7 +32,7 @@ securityresources
     | extend type = tolower(type)
     | where type == 'microsoft.containerservice/managedclusters'
 ) on subscriptionId
-| extend oidcIssuerProfile = properties.oidcIssuerProfile
+| extend oidcIssuerProfile = properties.oidcIssuerProfile.enabled
 | extend privateCluster = properties.apiServerAccessProfile.enablePrivateCluster
 | extend privateLinkResources= properties.privateLinkResources
 | extend networkPlugin = properties.networkProfile.networkPlugin
@@ -43,4 +43,4 @@ securityresources
 | extend defenderEnabled = properties.securityProfile.defender.securityMonitoring.enabled
 | extend kubeVerMetforDefender = iff(parse_version(tostring(kubernetesVersion)) >= parse_version('1.19'), 'true', 'false')
 | extend kubeVerMetforOIDC = iff(parse_version(tostring(kubernetesVersion)) >= parse_version('1.22'), 'true', 'false')
-| project subscriptionId, subscriptionName, planName, isPlanEnabled, isPlanDeprecated, resourceGroup, clusterName = name, kubernetesVersion, oidcIssuerProfile, privateCluster, defenderEnabled, kubeVerMetforDefender, kubeVerMetforOIDC, outboundType, networkPlugin, networkPolicy, networkDataplane, privateLinkResources, properties
+| project subscriptionId, subscriptionName, planName, isPlanEnabled, isPlanDeprecated, resourceGroup, clusterName = name, kubernetesVersion, oidcIssuerProfile, kubeVerMetforOIDC, defenderEnabled, kubeVerMetforDefender, privateCluster, outboundType, networkPlugin, networkPolicy, networkDataplane, privateLinkResources, properties
