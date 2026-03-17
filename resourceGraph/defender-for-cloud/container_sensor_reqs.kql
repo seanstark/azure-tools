@@ -6,7 +6,7 @@ resourcecontainers
 securityresources
 | where type =~ 'microsoft.security/pricings'
 | extend planName = name
-| where planName in ('KubernetesService', 'containers')
+| where planName in ('KubernetesService', 'Containers')
 | extend isPlanEnabled = case (
     tostring(properties.pricingTier) == 'Standard', 'Enabled',
     'Disabled'
