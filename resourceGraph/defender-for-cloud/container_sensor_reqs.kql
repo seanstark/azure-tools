@@ -2,6 +2,31 @@ resourcecontainers
 | where type == "microsoft.resources/subscriptions"
 | where properties.state == 'Enabled'
 | project subscriptionId, subscriptionName = name
+| join ( 
+securityresources
+| where type =~ 'microsoft.security/pricings'
+| extend planName = name
+| where planName in ('KubernetesService', 'containers')
+| extend isPlanEnabled = case (
+    tostring(properties.pricingTier) == 'Standard', 'Enabled',
+    'Disabled'
+)
+| where isPlanEnabled == 'Enabled'
+| extend isPlanDeprecated = case (
+    planName in ('KubernetesService'), 'true',
+    'false'
+)
+| extend newPlanName = case ( 
+    planName in ('KubernetesService'), 'Defender for Containers',
+    'n/a'
+)
+| extend planName = case( 
+    planName == 'Containers', 'Defender for Containers',
+    planName == 'KubernetesService', 'Defender for Kubernetes',
+    planName
+)
+| project subscriptionId, planName, isPlanEnabled, isPlanDeprecated, newPlanName
+) on subscriptionId
 | join (
     resources
     | extend type = tolower(type)
@@ -14,4 +39,4 @@ resourcecontainers
 | extend defenderEnabled = properties.securityProfile.defender.securityMonitoring.enabled
 | extend kubeVerMetforDefender = iff(parse_version(tostring(kubernetesVersion)) >= parse_version('1.19'), 'true', 'false')
 | extend kubeVerMetforOIDC = iff(parse_version(tostring(kubernetesVersion)) >= parse_version('1.22'), 'true', 'false')
-| project subscriptionId, subscriptionName, resourceGroup, clusterName = name, kubernetesVersion, oidcIssuerProfile, privateCluster, defenderEnabled, kubeVerMetforDefender, kubeVerMetforOIDC, privateLinkResources, properties
+| project subscriptionId, subscriptionName, planName, isPlanEnabled, isPlanDeprecated, resourceGroup, clusterName = name, kubernetesVersion, oidcIssuerProfile, privateCluster, defenderEnabled, kubeVerMetforDefender, kubeVerMetforOIDC, privateLinkResources,properties
