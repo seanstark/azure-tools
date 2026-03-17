@@ -1,5 +1,5 @@
 resourcecontainers
-| where type == "microsoft.resources/subscriptions"
+| where type == 'microsoft.resources/subscriptions'
 | where properties.state == 'Enabled'
 | project subscriptionId, subscriptionName = name
 | join (
@@ -53,13 +53,13 @@ resourcecontainers
     // Defender for Containers vcore Counts
     | union (
         resourcecontainers
-        | where type == "microsoft.resources/subscriptions"
+        | where type == 'microsoft.resources/subscriptions'
         | where properties.state == 'Enabled'
         | project subscriptionId, subscriptionName = name
         | join ( 
             resources
             | where type == 'microsoft.containerservice/managedclusters'
-            | where isnotempty(sku) and tolower(sku.tier) != "consumption" 
+            | where isnotempty(sku) and tolower(sku.tier) != 'consumption'
             | where tostring(properties.powerState.code) =~ 'Running'
             | extend pool = (properties.agentPoolProfiles)
             | mv-expand pool
@@ -68,7 +68,7 @@ resourcecontainers
             | summarize coreCount = sum(cpuCores) by subscriptionId
             | union (
                 resources
-                | where tolower(type) =~ "microsoft.kubernetes/connectedclusters"
+                | where tolower(type) =~ 'microsoft.kubernetes/connectedclusters'
                 | where properties.connectivityStatus !in ('Offline', 'Expired')
                 | extend cpuCores = toint(properties.totalCoreCount), poolcount = toint(properties.totalNodeCount)
                 | project subscriptionId, resourceGroup, cluster = name, poolcount, cpuCores
