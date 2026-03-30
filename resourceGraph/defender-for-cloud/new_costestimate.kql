@@ -7,6 +7,7 @@ resourcecontainers
     | extend type = tolower(type)
     | where type in ('microsoft.sql/managedinstances', 'microsoft.compute/virtualmachines', 'microsoft.classiccompute/virtualmachines', 'microsoft.hybridcompute/machines', 'microsoft.compute/virtualmachinescalesets', 'microsoft.sql/servers', 'microsoft.storage/storageaccounts', 'microsoft.documentdb/databaseaccounts', 'microsoft.containerregistry/registries', 'microsoft.keyvault/vaults', 'microsoft.web/serverfarms', 'microsoft.dbforpostgresql/servers', 'microsoft.dbforpostgresql/flexibleservers', 'microsoft.dbformysql/servers', 'microsoft.dbformysql/flexibleservers', 'microsoft.dbformariadb/servers', 'microsoft.apimanagement/service', 'microsoft.sqlvirtualmachine/sqlvirtualmachines', 'microsoft.azurearcdata/sqlserverinstances', 'microsoft.cognitiveservices/accounts', 'microsoft.web/sites')
     | extend bundleCount = 0, bundleName = pack_array('')
+    | extend bundleCount = 0, bundleName = pack_array('arm')
     // Defender for Servers, virtual machines, exclude deallocated
     | extend bundleCount = iff(type in ('microsoft.compute/virtualmachines', 'microsoft.classiccompute/virtualmachines') and tostring(properties.extended.instanceView.powerState.displayStatus) !contains 'deallocated', 1, bundleCount), 
         bundleName  = iff(type in ('microsoft.compute/virtualmachines', 'microsoft.classiccompute/virtualmachines') and tostring(properties.extended.instanceView.powerState.displayStatus) !contains 'deallocated', pack_array('virtualmachines', 'cloudposture'), bundleName)
@@ -47,6 +48,7 @@ resourcecontainers
     | extend resourceCount = case(
         bundleName == 'serverless' and resourceCount <= 8, 1,
         bundleName == 'serverless' and resourceCount > 8, tolong(ceiling(todouble(resourceCount) / 8.0)),
+        bundleName == 'arm', 1,
         resourceCount
         )
     | where bundleName != ''
