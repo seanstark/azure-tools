@@ -1,14 +1,48 @@
-resources 
-| extend planTypes = tolower('microsoft.compute/virtualmachines, microsoft.hybridcompute/machines, microsoft.classiccompute/virtualmachines')
-| extend type = tolower(type)
-| extend resourceType = case(
-    type == 'microsoft.compute/virtualmachines', 'Virtual Machine',
-    type == 'microsoft.classiccompute/virtualmachines', 'Virtual Machine',
-    type == 'microsoft.hybridcompute/virtualmachines', 'Azure Arc Server', 'Virtual Machine'
-)
-| where planTypes has type 
-| extend powerState = properties.extended.instanceView.powerState.displayStatus 
-| where tostring(properties.extended.instanceView.powerState.displayStatus) !contains 'deallocated' 
-| where properties.status !in ('Expired','Disconnected')
-| extend productName = 'Defender for Servers'
-| summarize count = count() by subscriptionId, resourceGroup, productName, resourceType
+resourcecontainers
+| where type == "microsoft.resources/subscriptions"
+| where properties.state == 'Enabled'
+| project subscriptionId, subscriptionName = name, subscriptionState = properties.state
+| join (
+    securityresources
+    | where type =~ 'microsoft.security/pricings'
+    | where name == 'VirtualMachines'
+    | where properties.subPlan == 'P2'
+    | extend planName = name
+    | extend freeTrialRemainingTime = properties.freeTrialRemainingTime
+    | extend resourcesCoverageStatus = tostring(properties.resourcesCoverageStatus)
+    | extend isEnabled = case (
+        tostring(properties.pricingTier) == 'Standard', 'Enabled',
+        'Disabled'
+        )
+    | extend subPlan = case(
+        isnotempty(properties.subPlan), tostring(properties.subPlan),
+        'base'
+        )
+    | extend planSet = tolower(strcat(planName, '-', subPlan))
+    | extend plan = tolower(planName)
+    | extend planName = case( 
+        planName == 'VirtualMachines', 'Defender for Servers',
+        planName
+        )
+    | project subscriptionId, plan, planName, subPlan, planSet, freeTrialRemainingTime, resourcesCoverageStatus, isEnabled
+) on subscriptionId
+| project-away subscriptionId1
+| join kind=leftouter (
+resources
+    | extend type = tolower(type)
+    | where type in ('microsoft.compute/virtualmachines', 'microsoft.classiccompute/virtualmachines', 'microsoft.hybridcompute/machines', 'microsoft.compute/virtualmachinescalesets')
+    | extend bundleCount = 0, bundleName = pack_array('')
+    | extend bundleCount = iff(type in ('microsoft.compute/virtualmachines', 'microsoft.classiccompute/virtualmachines') and tostring(properties.extended.instanceView.powerState.displayStatus) !contains 'deallocated' and 
+    tostring(properties.storageProfile.imageReference.offer) !contains 'Databricks', 1, bundleCount), 
+    bundleName  = iff(type in ('microsoft.compute/virtualmachines', 'microsoft.classiccompute/virtualmachines') and tostring(properties.extended.instanceView.powerState.displayStatus) !contains 'deallocated' and 
+    tostring(properties.storageProfile.imageReference.offer) !contains 'Databricks', pack_array('virtualmachines'), bundleName)
+    | extend bundleCount = iff(type == 'microsoft.hybridcompute/machines' and tostring(properties.extended.instanceView.powerState.displayStatus) !contains 'deallocated' and properties.status !in ('Expired','Disconnected'), 1, bundleCount), bundleName  = iff(type == 'microsoft.hybridcompute/machines', pack_array('virtualmachines'), bundleName)
+    | extend bundleCount = iff(type == 'microsoft.compute/virtualmachinescalesets' and sku != '' and sku.capacity != '' and tostring(properties.virtualMachineProfile.extensionProfile) !contains 'Compute.AKS', toint(sku.capacity), bundleCount), bundleName = iff(type =~ 'microsoft.compute/virtualmachinescalesets' and sku != '' and sku.capacity != '' and tostring(properties.virtualMachineProfile.extensionProfile) !contains 'Compute.AKS', pack_array('virtualmachines'), bundleName)  
+    | mv-expand bundleName to typeof(string) limit 2000
+    | summarize resourcesCount = sum(bundleCount) by bundleName, subscriptionId
+    | where bundleName != ''
+    | summarize resourcesCount = sum(resourcesCount) by bundleName, subscriptionId
+    | project resourcesCount, subscriptionId, plan = bundleName
+    )
+    on subscriptionId, plan
+| project subscriptionId, subscriptionName, subscriptionState, planName, subPlan, plan, isEnabled, resourcesCount
