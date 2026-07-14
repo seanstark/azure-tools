@@ -5,7 +5,7 @@ resourcecontainers
 | join (
     resources
     | extend type = tolower(type)
-    | where type in ('microsoft.sql/managedinstances', 'microsoft.compute/virtualmachines', 'microsoft.classiccompute/virtualmachines', 'microsoft.hybridcompute/machines', 'microsoft.compute/virtualmachinescalesets', 'microsoft.sql/servers', 'microsoft.storage/storageaccounts', 'microsoft.documentdb/databaseaccounts', 'microsoft.containerregistry/registries', 'microsoft.keyvault/vaults', 'microsoft.web/serverfarms', 'microsoft.dbforpostgresql/servers', 'microsoft.dbforpostgresql/flexibleservers', 'microsoft.dbformysql/servers', 'microsoft.dbformysql/flexibleservers', 'microsoft.dbformariadb/servers', 'microsoft.apimanagement/service', 'microsoft.sqlvirtualmachine/sqlvirtualmachines', 'microsoft.azurearcdata/sqlserverinstances', 'microsoft.cognitiveservices/accounts', 'microsoft.web/sites')
+    | where type in ('microsoft.sql/managedinstances', 'microsoft.compute/virtualmachines', 'microsoft.classiccompute/virtualmachines', 'microsoft.hybridcompute/machines', 'microsoft.compute/virtualmachinescalesets', 'microsoft.sql/servers', 'microsoft.storage/storageaccounts', 'microsoft.documentdb/databaseaccounts', 'microsoft.containerregistry/registries', 'microsoft.keyvault/vaults', 'microsoft.web/serverfarms', 'microsoft.dbforpostgresql/servers', 'microsoft.dbforpostgresql/flexibleservers', 'microsoft.dbformysql/servers', 'microsoft.dbformysql/flexibleservers', 'microsoft.dbformariadb/servers', 'microsoft.apimanagement/service', 'microsoft.sqlvirtualmachine/sqlvirtualmachines', 'microsoft.azurearcdata/sqlserverinstances', 'microsoft.cognitiveservices/accounts', 'microsoft.web/sites','microsoft.containerinstance/containergroups','microsoft.app/containerapps')
     | extend bundleCount = 0, bundleName = pack_array('')
     | extend bundleCount = 0, bundleName = pack_array('arm')
     // Defender for Servers, virtual machines, exclude deallocated
@@ -42,12 +42,16 @@ resourcecontainers
     | extend bundleCount = iff(type == 'microsoft.cognitiveservices/accounts' and kind in ('OpenAI', 'AIServices'), 1, bundleCount), bundleName = iff(type == 'microsoft.cognitiveservices/accounts' and kind in ('OpenAI', 'AIServices'), pack_array('ai'), bundleName)
     // Defender CSPM, serverless
     | extend bundleCount = iff(type == 'microsoft.web/sites' and (tolower(kind) startswith 'app' or tolower(kind) startswith 'functionapp') and not(tolower(kind) contains 'workflowapp'), 1, bundleCount), bundleName = iff(type == 'microsoft.web/sites' and (tolower(kind) startswith 'app' or tolower(kind) startswith 'functionapp') and not(tolower(kind) contains 'workflowapp'), pack_array('serverless'), bundleName)
+      // Defender CSPM, serverless containers
+    | extend bundleCount = iff(type in ('microsoft.containerinstance/containergroups', 'microsoft.app/containerapps') and tolower(tostring(properties.instanceView.state)) == 'running' or tolower(tostring(properties.runningStatus)) in ("running", "runningatmaxscale"), array_length(array_concat(properties.containers,properties.template.containers)), bundleCount), bundleName = iff(type in ('microsoft.containerinstance/containergroups', 'microsoft.app/containerapps') and tolower(tostring(properties.instanceView.state)) == 'running' or tolower(tostring(properties.runningStatus)) in ("running", "runningatmaxscale"), pack_array('serverlesscontainers'), bundleName)
     | mv-expand bundleName to typeof(string) limit 2000
     | summarize resourceCount = sum(bundleCount) by subscriptionId, bundleName
     // Update serverless counts to reflect 8:1 billing
     | extend resourceCount = case(
         bundleName == 'serverless' and resourceCount <= 8, 1,
         bundleName == 'serverless' and resourceCount > 8, tolong(ceiling(todouble(resourceCount) / 8.0)),
+        bundleName == 'serverlesscontainers' and resourceCount <= 2, 1,
+        bundleName == 'serverlesscontainers' and resourceCount > 2, tolong(ceiling(todouble(resourceCount) / 2.0)),
         bundleName == 'arm', 1,
         resourceCount
         )
